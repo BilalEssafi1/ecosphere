@@ -1,10 +1,15 @@
+ /* Global styling */
 .App {
     font-family: "Poppins", sans-serif;
     background-color: #e9f6f0;
     min-height: 100vh;
     color: #333333;
   }
-  
+
+  .Main {
+    padding-top: 81px;
+  }
+
   * {
     box-sizing: border-box;
   }
