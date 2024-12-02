@@ -1,0 +1,40 @@
+.App {
+    font-family: "Poppins", sans-serif;
+    background-color: #e9f6f0;
+    min-height: 100vh;
+    color: #333333;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  /* Link styling */
+  a {
+    color: #4caf50; 
+    text-decoration: none;
+    transition: color ease-in-out 0.3s;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  a:hover i {
+    color: #388e3c;
+    transition: color ease-in-out 0.3s;
+  }
+  
+  /* Icon styling */
+  i {
+    color: #8bc34a; 
+    font-size: 1.6rem;
+    padding: 7px;
+    vertical-align: middle;
+  }
+  
+  i:hover {
+    cursor: pointer;
+    transition: color ease-in-out 0.3s;
+    color: #388e3c; 
+  }
