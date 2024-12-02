@@ -130,7 +130,11 @@ const SignUpForm = () => {
         <Image
           className={`${appStyles.FillerImage}`}
           src={logoEcosphere}
-          style={{ width: "340px", height: "360px" }} 
+          style={{ 
+            width: "100%",
+            maxWidth: "700px", 
+            height: "100%",
+            maxHeight: "350px" }} 
         />
       </Col>
     </Row>
