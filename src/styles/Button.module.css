@@ -1,0 +1,79 @@
+/* Base Button Styling */
+.Button {
+    font-size: 0.9rem; 
+    align-self: center;
+    border-radius: 100px; 
+    border: 1px solid transparent; 
+    padding: 8px 16px; 
+    margin: 4px; 
+    min-width: 100px; 
+    color: #ffffff; 
+    background-color: #4caf50; 
+    transition: background-color 0.3s ease, color 0.3s ease; 
+  }
+  
+  /* Hover State Styling */
+  .Button:hover {
+    background-color: #388e3c; 
+    opacity: 0.9; 
+    cursor: pointer; 
+  }
+  
+  /* Active State */
+  .Button:active {
+    background-color: #2e7d32; 
+    color: #ffffff; 
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2); 
+  }
+  
+  /* Focus State Styling */
+  .Button:focus {
+    outline: 2px solid #81c784; 
+    outline-offset: 4px; 
+  }
+  
+  /* Wide Button Variant */
+  .Wide {
+    padding: 12px 60px; 
+    width: 100%; 
+    font-size: 1rem; 
+  }
+  
+  /* Blue Button Variant Styling */
+  .Blue,
+  .BlueOutline:hover {
+    background-color: #2e86de; 
+    color: #ffffff;
+  }
+  
+  .BlueOutline,
+  .Blue:hover {
+    background-color: #ffffff;
+    color: #2e86de; 
+    border: 1px solid #2e86de; 
+  }
+  
+  /* Black Button Variant */
+  .Black,
+  .BlackOutline:hover {
+    background-color: #333333; 
+    color: #ffffff; 
+  }
+  
+  .Black:hover,
+  .BlackOutline {
+    background-color: #e0e0e0; 
+    color: #333333; 
+    border: 1px solid #333333; 
+  }
+  
+  /* Bright Button Variant Styling */
+  .Bright {
+    background-color: #81d4fa; 
+    color: #1e88e5;
+  }
+  
+  .Bright:hover {
+    background-color: #4fc3f7; 
+    color: #ffffff; 
+  }

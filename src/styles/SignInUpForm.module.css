@@ -1,0 +1,83 @@
+/* Row Styling */
+.Row {
+    height: calc(100vh - 81px); 
+    background-color: #e9f6f0; 
+  }
+  
+  /* Input Styling */
+  .Input {
+    background: #ffffff; 
+    border: 1px solid #c8e6c9; 
+    box-sizing: border-box;
+    border-radius: 4px; 
+    color: #388e3c; 
+    text-align: center;
+    padding: 10px;
+    font-size: 1rem; 
+    transition: border-color 0.3s ease; 
+  }
+  
+  .Input:focus {
+    border-color: #4caf50; 
+    outline: none; 
+  }
+  
+  /* Header Styling */
+  .Header {
+    font-style: normal;
+    font-weight: bold;
+    font-size: 18px; 
+    line-height: 22px;
+    text-align: center;
+    letter-spacing: 0.1em; 
+    text-transform: uppercase;
+    color: #388e3c; 
+    margin-bottom: 20px; 
+  }
+  
+  /* Link Styling */
+  .Link {
+    text-decoration: none;
+    text-align: center;
+    display: block;
+    margin: auto;
+    font-size: 1rem; 
+    color: #4caf50;
+    transition: color 0.3s ease; 
+  }
+  
+  .Link:hover span {
+    color: #388e3c; 
+  }
+  
+  .Link span {
+    color: #8bc34a;
+    font-weight: bold;
+  }
+  
+  /* Container Styling */
+  .Container {
+    padding: 30px 20px; 
+    background-color: #ffffff; 
+    border-radius: 8px; 
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
+  }
+  
+  /* Adjusted In & Up Styling */
+  .SignInCol {
+    height: 320px;
+    background-color: #f1f8e9; 
+    border-radius: 8px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .SignUpCol {
+    height: 375px;
+    background-color: #c8e6c9; /* Softer green for sign-up column */
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
