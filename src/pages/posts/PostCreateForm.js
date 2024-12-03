@@ -87,7 +87,7 @@ function PostCreateForm() {
                       className={appStyles.Image} 
                       src={image} 
                       rounded
-                      style: {{width: "150px", height: "150px"}} 
+                      style={{width: "150px", height: "150px"}} 
                     />
                   </figure>
                   <div>
