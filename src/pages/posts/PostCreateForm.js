@@ -115,6 +115,7 @@ function PostCreateForm() {
                 id="image-upload"
                 accept="image/*"
                 onChange={handleChangeImage}
+                className="d-none"
               />
             </Form.Group>
             <div className="d-md-none">{textFields}</div>
