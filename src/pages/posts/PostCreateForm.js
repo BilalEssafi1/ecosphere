@@ -107,7 +107,7 @@ function PostCreateForm() {
                   <Asset
                     src={Upload}
                     message="Click or tap to upload an image"
-                    style={{ maxWidth: "200px", maxHeight: "200px"}}
+                    style={{ maxWidth: "100px", maxHeight: "100px"}}
                   />
                 </Form.Label>
               )}
