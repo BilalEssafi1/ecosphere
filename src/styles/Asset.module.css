@@ -9,3 +9,11 @@
     border-radius: 6px; /* Slight rounding for a softer appearance */
     padding: 10px; /* Add a bit of padding for spacing */
   }
+
+  /* Upload Image Styling */
+  .Asset img {
+    width: 150px; 
+    height: 150px;
+    object-fit: cover; 
+    border-radius: 50%;
+  }
