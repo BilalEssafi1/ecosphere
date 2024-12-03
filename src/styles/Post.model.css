@@ -1,0 +1,53 @@
+/* Post Container Styling */
+.Post {
+    background-color: #ffffff; 
+    border: 1px solid #dadadf;
+    border-radius: 8px; 
+    margin-bottom: 16px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .Post:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+  }
+  
+  /* Figure and Header Styling */
+  .Post figure,
+  h5 {
+    margin: 0;
+  }
+  
+  .Post h5 {
+    font-size: 1.2rem;
+    font-weight: 600; 
+    color: #2142b2; 
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+  
+  /* Heart Icon Styling */
+  .Heart {
+    color: #f85032; 
+    font-size: 1.5rem; 
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  
+  .Heart:hover {
+    color: #2142b2; 
+  }
+  
+  .HeartOutline {
+    color: #dadadf; 
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  
+  .HeartOutline:hover {
+    color: #f85032; 
+  }
+  
