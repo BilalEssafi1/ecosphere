@@ -87,7 +87,7 @@ function PostCreateForm() {
                       className={appStyles.Image} 
                       src={image} 
                       rounded
-                      style={{maxWidth: "200px", maxHeight: "200px"}} 
+                      style={{maxWidth: "500px", maxHeight: "500px"}} 
                     />
                   </figure>
                   <div>
@@ -107,6 +107,7 @@ function PostCreateForm() {
                   <Asset
                     src={Upload}
                     message="Click or tap to upload an image"
+                    style={{ maxWidth: "200px", maxHeight: "200px"}}
                   />
                 </Form.Label>
               )}
