@@ -22,97 +22,76 @@ function ProfilePage() {
   const { id } = useParams();
   const setProfileData = useSetProfileData();
   const { pageProfile } = useProfileData();
-  const [profile] = pageProfile.results || [{}];
+  const profile = pageProfile?.results?.[0];
   const is_owner = currentUser?.username === profile?.owner;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: fetchedProfile } = await axiosReq.get(`/profiles/${id}/`);
+        const { data: profileData } = await axiosReq.get(`/profiles/${id}/`);
         setProfileData((prevState) => ({
           ...prevState,
-          pageProfile: { results: [fetchedProfile] },
+          pageProfile: { results: [profileData] },
         }));
-        if (fetchedProfile) setHasLoaded(true);
       } catch (err) {
         console.log(err);
+      } finally {
+        setHasLoaded(true);
       }
     };
     fetchData();
   }, [id, setProfileData]);
 
-  const mainProfile = (
-    <>
-      <Row noGutters className="px-3 text-center">
-        <Col lg={3} className="text-lg-left">
-          <Image
-            className={styles.ProfileImage}
-            roundedCircle
-            src={profile?.image}
-          />
-        </Col>
-        <Col lg={6}>
-          <h3 className="m-2">{profile?.owner}</h3>
-          <Row className="justify-content-center no-gutters">
-            <Col xs={3} className="my-2">
-              <div>{profile?.posts_count}</div>
-              <div>posts</div>
-            </Col>
-            <Col xs={3} className="my-2">
-              <div>{profile?.followers_count}</div>
-              <div>followers</div>
-            </Col>
-            <Col xs={3} className="my-2">
-              <div>{profile?.following_count}</div>
-              <div>following</div>
-            </Col>
-          </Row>
-        </Col>
-        <Col lg={3} className="text-lg-right">
-          {currentUser &&
-            !is_owner &&
-            (profile?.following_id ? (
-              <Button
-                className={`${btnStyles.Button} ${btnStyles.BlackOutline}`}
-                onClick={() => {}}
-              >
-                unfollow
-              </Button>
-            ) : (
-              <Button
-                className={`${btnStyles.Button} ${btnStyles.Black}`}
-                onClick={() => {}}
-              >
-                follow
-              </Button>
-            ))}
-        </Col>
-        {profile?.content && <Col className="p-3">{profile.content}</Col>}
-      </Row>
-    </>
-  );
-
-  const mainProfilePosts = (
-    <>
-      <hr />
-      <p className="text-center">Profile owner's posts</p>
-      <hr />
-    </>
-  );
+  if (!hasLoaded) return <Asset spinner />;
+  if (!profile) return <p>Profile not found</p>;
 
   return (
     <Row>
       <Col className="py-2 p-0 p-lg-2" lg={8}>
         <PopularProfiles mobile />
         <Container className={appStyles.Content}>
-          {hasLoaded ? (
-            <>
-              {mainProfile}
-              {mainProfilePosts}
-            </>
-          ) : (
-            <Asset spinner />
-          )}
+          <Row noGutters className="px-3 text-center">
+            <Col lg={3} className="text-lg-left">
+              <Image
+                className={styles.ProfileImage}
+                roundedCircle
+                src={profile.image}
+              />
+            </Col>
+            <Col lg={6}>
+              <h3 className="m-2">{profile.owner}</h3>
+              <Row className="justify-content-center no-gutters">
+                <Col xs={3} className="my-2">
+                  <div>{profile.posts_count}</div>
+                  <div>posts</div>
+                </Col>
+                <Col xs={3} className="my-2">
+                  <div>{profile.followers_count}</div>
+                  <div>followers</div>
+                </Col>
+                <Col xs={3} className="my-2">
+                  <div>{profile.following_count}</div>
+                  <div>following</div>
+                </Col>
+              </Row>
+            </Col>
+            <Col lg={3} className="text-lg-right">
+              {currentUser && !is_owner && (
+                <Button
+                  className={`${btnStyles.Button} ${
+                    profile.following_id ? btnStyles.BlackOutline : btnStyles.Black
+                  }`}
+                  onClick={() => {}}
+                >
+                  {profile.following_id ? "unfollow" : "follow"}
+                </Button>
+              )}
+            </Col>
+            {profile.content && <Col className="p-3">{profile.content}</Col>}
+          </Row>
+          <hr />
+          <p className="text-center">Profile owner's posts</p>
+          <hr />
         </Container>
       </Col>
       <Col lg={4} className="d-none d-lg-block p-0 p-lg-2">
