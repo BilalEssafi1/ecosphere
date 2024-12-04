@@ -1,0 +1,28 @@
+/* Comment Form Styling */
+
+.Form {
+    border: none;
+    border-bottom: 2px solid #66cdaa;
+    color: #242a3d;
+    padding: 8px;
+    background-color: #f8fff8;
+  }
+  
+  .Button {
+    border: none;
+    background-color: #66cdaa;
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 8px 16px;
+    min-width: 90px;
+    margin: 10px;
+    font-weight: bold;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  
+  .Button:hover {
+    cursor: pointer;
+    background-color: #ffffff;
+    color: #66cdaa;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }

@@ -1,0 +1,15 @@
+/* Comment Owner Name and Date Styling */
+
+.Owner {
+    font-weight: 600;
+    color: #2a5934;
+    margin-right: 8px;
+    font-size: 1rem;
+  }
+  
+  .Date {
+    font-weight: 300;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-left: 4px;
+  }
