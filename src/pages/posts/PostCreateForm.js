@@ -16,8 +16,10 @@ import { axiosReq } from "../../api/axiosDefaults";
 import { useRedirect } from "../../hooks/useRedirect";
 
 function PostCreateForm() {
-  useRedirect("loggedOut");
+  useRedirect("loggedOut");  // Redirect users to login if not authenticated
   const [errors, setErrors] = useState({});
+  const [tags, setTags] = useState([]); // State to store selected tags
+  const [availableTags, setAvailableTags] = useState([]); // State to store tags fetched from the backend
 
   const [postData, setPostData] = useState({
     title: "",
@@ -26,9 +28,20 @@ function PostCreateForm() {
   });
   const { title, content, image } = postData;
 
-  const imageInput = useRef(null);
+  const imageInput = useRef(null);  // Ref to access the image input field
   const history = useHistory();
 
+  // Fetch available tags from the backend API
+  const fetchTags = async () => {
+    try {
+      const { data } = await axiosReq.get("/tags/");  // GET request to fetch tags
+      setAvailableTags(data);  // Set available tags in state
+    } catch (err) {
+      console.log(err);  // Handle errors if the request fails
+    }
+  };
+
+  // Handle changes to form fields like title and content
   const handleChange = (event) => {
     setPostData({
       ...postData,
@@ -36,37 +49,47 @@ function PostCreateForm() {
     });
   };
 
+  // Handle changes to the image input
   const handleChangeImage = (event) => {
     if (event.target.files.length) {
-      URL.revokeObjectURL(image);
+      URL.revokeObjectURL(image);  // Revoke any previously created URLs to avoid memory leaks
       setPostData({
         ...postData,
-        image: URL.createObjectURL(event.target.files[0]),
+        image: URL.createObjectURL(event.target.files[0]),  // Set new image URL for preview
       });
     }
   };
 
+  // Handle changes to tag selection
+  const handleTagChange = (event) => {
+    // Get all selected tag values
+    const selectedTags = Array.from(event.target.selectedOptions, (option) => option.value);
+    setTags(selectedTags);  // Update the tags state with the selected tags
+  };
+
+  // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData();
 
-    formData.append("title", title);
-    formData.append("content", content);
-    formData.append("image", imageInput.current.files[0]);
+    formData.append("title", title);  // Append title to form data
+    formData.append("content", content);  // Append content to form data
+    formData.append("image", imageInput.current.files[0]);  // Append image to form data
+    tags.forEach((tag) => formData.append("tags", tag));  // Append selected tags to form data
 
     try {
-      const { data } = await axiosReq.post("/posts/", formData);
-      history.push(`/posts/${data.id}`);
+      const { data } = await axiosReq.post("/posts/", formData);  // POST request to create a new post
+      history.push(`/posts/${data.id}`);  // Redirect to the newly created post
     } catch (err) {
-      // console.log(err);
       if (err.response?.status !== 401) {
-        setErrors(err.response?.data);
+        setErrors(err.response?.data);  // Set errors if the request fails
       }
     }
   };
 
   const textFields = (
     <div className="text-center">
+      {/* Title field */}
       <Form.Group>
         <Form.Label>Title</Form.Label>
         <Form.Control
@@ -78,10 +101,11 @@ function PostCreateForm() {
       </Form.Group>
       {errors?.title?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
-          {message}
+          {message}  {/* Display error messages for title field */}
         </Alert>
       ))}
 
+      {/* Content field */}
       <Form.Group>
         <Form.Label>Content</Form.Label>
         <Form.Control
@@ -94,18 +118,42 @@ function PostCreateForm() {
       </Form.Group>
       {errors?.content?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
-          {message}
+          {message}  {/* Display error messages for content field */}
         </Alert>
       ))}
 
+      {/* Tags selection field */}
+      <Form.Group>
+        <Form.Label>Tags</Form.Label>
+        <Form.Control
+          as="select"
+          multiple
+          name="tags"
+          value={tags}
+          onChange={handleTagChange}  // Handle changes to tag selection
+        >
+          {availableTags.map((tag) => (
+            <option key={tag.id} value={tag.name}>
+              {tag.name}  {/* Display tag name in the dropdown */}
+            </option>
+          ))}
+        </Form.Control>
+      </Form.Group>
+      {errors?.tags?.map((message, idx) => (
+        <Alert variant="warning" key={idx}>
+          {message}  {/* Display error messages for tags field */}
+        </Alert>
+      ))}
+
+      {/* Cancel and Create buttons */}
       <Button
         className={`${btnStyles.Button} ${btnStyles.Blue}`}
         onClick={() => history.goBack()}
       >
-        cancel
+        Cancel
       </Button>
       <Button className={`${btnStyles.Button} ${btnStyles.Blue}`} type="submit">
-        create
+        Create
       </Button>
     </div>
   );
