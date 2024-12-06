@@ -2,9 +2,7 @@ import React from "react";
 import styles from "../styles/Avatar.module.css";
 
 const Avatar = ({ src, height = 50, text }) => {
-  // Add a default fallback image
-  const defaultImage = "https://res.cloudinary.com/dsplumfvt/image/upload/green-apple_kupzt9";
-  
+
   return (
     <span>
       <img
