@@ -3,6 +3,8 @@
     background-color: #f5f6fa;
     padding: 20px;
     border-radius: 20px;
+    position: relative;
+    z-index: 1;
   }
   
   /* SearchBar Styling */

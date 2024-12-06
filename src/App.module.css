@@ -4,6 +4,9 @@
     background-color: #e9f6f0;
     min-height: 100vh;
     color: #333333;
+    position: relative;
+    overflow: visible;
+    z-index: 1; 
   }
 
   .Main {

@@ -1,7 +1,9 @@
 /* Row Styling */
 .Row {
     height: calc(100vh - 81px); 
-    background-color: #e9f6f0; 
+    background-color: #e9f6f0;
+    position: relative;
+    overflow: visible;
   }
   
   /* Input Styling */
