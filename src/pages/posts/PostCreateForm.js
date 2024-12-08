@@ -1,20 +1,3 @@
-import React, { useRef, useState } from "react";
-import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Container from "react-bootstrap/Container";
-import Alert from "react-bootstrap/Alert";
-import Image from "react-bootstrap/Image";
-import Asset from "../../components/Asset";
-import Upload from "../../assets/upload.png";
-import styles from "../../styles/PostCreateEditForm.module.css";
-import appStyles from "../../App.module.css";
-import btnStyles from "../../styles/Button.module.css";
-import { useHistory } from "react-router";
-import { axiosReq } from "../../api/axiosDefaults";
-import { useRedirect } from "../../hooks/useRedirect";
-
 function PostCreateForm() {
   useRedirect("loggedOut");  // Redirect users to login if not authenticated
   const [errors, setErrors] = useState({});
@@ -52,6 +35,16 @@ function PostCreateForm() {
   // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    // Check if content is empty
+    if (!content) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        content: ["Content is required."]
+      }));
+      return;
+    }
+
     const formData = new FormData();
 
     formData.append("title", title);  // Append title to form data
@@ -79,6 +72,7 @@ function PostCreateForm() {
           name="title"
           value={title}
           onChange={handleChange}
+          required  // Make title field mandatory
         />
       </Form.Group>
       {errors?.title?.map((message, idx) => (
@@ -96,6 +90,7 @@ function PostCreateForm() {
           name="content"
           value={content}
           onChange={handleChange}
+          required  // Make content field mandatory
         />
       </Form.Group>
       {errors?.content?.map((message, idx) => (
@@ -104,7 +99,7 @@ function PostCreateForm() {
         </Alert>
       ))}
 
-      {/* Updated tag input field */}
+      {/* Hashtags field */}
       <Form.Group>
         <Form.Label>Add hashtags</Form.Label>
         <Form.Control
@@ -120,7 +115,7 @@ function PostCreateForm() {
       </Form.Group>
       {errors?.add_hashtags?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
-          {message}  {/* Display error messages for tags field */}
+          {message}  {/* Display error messages for hashtags field */}
         </Alert>
       ))}
 
@@ -194,5 +189,3 @@ function PostCreateForm() {
     </Form>
   );
 }
-
-export default PostCreateForm;
