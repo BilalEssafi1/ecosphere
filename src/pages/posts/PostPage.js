@@ -86,6 +86,7 @@ function PostPage() {
 
   // Check both possible hashtag fields and provide default empty string
   const hashtags = post?.tags || post?.add_hashtags || "";
+  console.log("Hashtags:", hashtags);
 
   return (
     <Row className="h-100">
