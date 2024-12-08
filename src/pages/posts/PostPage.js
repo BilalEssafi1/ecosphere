@@ -98,3 +98,5 @@ function PostPage() {
     </Row>
   );
 }
+
+export default PostsPage;

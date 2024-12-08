@@ -189,3 +189,5 @@ function PostCreateForm() {
     </Form>
   );
 }
+
+export default PostCreateForm;
