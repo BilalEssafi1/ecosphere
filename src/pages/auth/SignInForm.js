@@ -16,7 +16,7 @@ import { useSetCurrentUser } from "../../contexts/CurrentUserContext";
 import { useRedirect } from "../../hooks/useRedirect";
 
 function SignInForm() {
-  const setCurrentUser = useSetCurrentUser(); // Setter function to update the current user context
+  const setCurrentUser = useSetCurrentUser(); // Context to update the logged-in user
   useRedirect("loggedIn"); // Redirect logged-in users away from the sign-in page
 
   const [signInData, setSignInData] = useState({
@@ -36,7 +36,9 @@ function SignInForm() {
 
     try {
       // Send a POST request to the login endpoint with the sign-in data
-      const { data } = await axios.post("/dj-rest-auth/login/", signInData);
+      const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
+        withCredentials: true, // Ensures cookies for authentication are sent and stored
+      });
 
       // If successful, update the current user context
       setCurrentUser(data.user);
@@ -45,6 +47,7 @@ function SignInForm() {
       history.push("/");
     } catch (err) {
       // If there's an error, update the errors state with the response data
+      console.error("Login error:", err.response?.data || err.message); // Debugging added to inspect errors
       setErrors(err.response?.data || {});
     }
   };
@@ -58,7 +61,6 @@ function SignInForm() {
     });
   };
 
-  // JSX for the component
   return (
     <Row className={styles.Row}>
       {/* Left Column - Form Section */}
