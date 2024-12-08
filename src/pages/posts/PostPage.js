@@ -13,7 +13,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import Asset from "../../components/Asset";
 import { fetchMoreData } from "../../utils/utils";
 import PopularProfiles from "../profiles/PopularProfiles";
-import PostsPage from './path/to/PostsPage';
+
 
 function PostPage() {
   const { id } = useParams();  // Get the post ID from the URL
@@ -116,4 +116,4 @@ function PostPage() {
   );
 }
 
-export default PostsPage;
+export default PostPage;
