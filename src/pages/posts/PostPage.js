@@ -14,10 +14,9 @@ import Asset from "../../components/Asset";
 import { fetchMoreData } from "../../utils/utils";
 import PopularProfiles from "../profiles/PopularProfiles";
 
-
 function PostPage() {
   const { id } = useParams();  // Get the post ID from the URL
-  const [post, setPost] = useState({ results: [] });  // State to store the post data
+  const [post, setPost] = useState(null);  // State to store the post data
   const [comments, setComments] = useState({ results: [] });  // State to store comments for the post
 
   const currentUser = useCurrentUser();  // Get the current logged-in user (if any)
@@ -31,7 +30,7 @@ function PostPage() {
           axiosReq.get(`/posts/${id}`),  // Get the post by ID
           axiosReq.get(`/comments/?post=${id}`),  // Get the comments for the post
         ]);
-        setPost({ results: [post] });  // Set the post data to state
+        setPost(post);  // Set the post data to state directly
         setComments(comments);  // Set the comments data to state
       } catch (err) {
         console.log(err);  // Log any error during the fetch
@@ -52,14 +51,14 @@ function PostPage() {
   };
 
   // Check if tags field exists and render the appropriate hashtags
-  const hashtags = post.results[0]?.tags || post.results[0]?.add_hashtags;
+  const hashtags = post?.tags || post?.add_hashtags;
 
   return (
     <Row className="h-100">
       {/* Left Column - Main content with post details */}
       <Col className="py-2 p-0 p-lg-2" lg={8}>
         <PopularProfiles mobile /> {/* Display popular profiles in mobile view */}
-        <Post {...post.results[0]} setPosts={setPost} postPage />  {/* Render the post with post data */}
+        {post && <Post {...post} setPosts={setPost} postPage />} {/* Render the post with post data */}
         
         {/* Main content area for the post, including hashtags and comments */}
         <Container className={appStyles.Content}>
