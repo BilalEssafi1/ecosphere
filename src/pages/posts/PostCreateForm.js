@@ -18,28 +18,17 @@ import { useRedirect } from "../../hooks/useRedirect";
 function PostCreateForm() {
   useRedirect("loggedOut");  // Redirect users to login if not authenticated
   const [errors, setErrors] = useState({});
-  const [tags, setTags] = useState([]); // State to store selected tags
-  const [availableTags, setAvailableTags] = useState([]); // State to store tags fetched from the backend
-
+  
   const [postData, setPostData] = useState({
     title: "",
     content: "",
     image: "",
+    add_hashtags: "",  // Changed from tags to add_hashtags to match API
   });
-  const { title, content, image } = postData;
+  const { title, content, image, add_hashtags } = postData;
 
   const imageInput = useRef(null);  // Ref to access the image input field
   const history = useHistory();
-
-  // Fetch available tags from the backend API
-  const fetchTags = async () => {
-    try {
-      const { data } = await axiosReq.get("/tags/");  // GET request to fetch tags
-      setAvailableTags(data);  // Set available tags in state
-    } catch (err) {
-      console.log(err);  // Handle errors if the request fails
-    }
-  };
 
   // Handle changes to form fields like title and content
   const handleChange = (event) => {
@@ -60,13 +49,6 @@ function PostCreateForm() {
     }
   };
 
-  // Handle changes to tag selection
-  const handleTagChange = (event) => {
-    // Get all selected tag values
-    const selectedTags = Array.from(event.target.selectedOptions, (option) => option.value);
-    setTags(selectedTags);  // Update the tags state with the selected tags
-  };
-
   // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -75,7 +57,7 @@ function PostCreateForm() {
     formData.append("title", title);  // Append title to form data
     formData.append("content", content);  // Append content to form data
     formData.append("image", imageInput.current.files[0]);  // Append image to form data
-    tags.forEach((tag) => formData.append("tags", tag));  // Append selected tags to form data
+    formData.append("add_hashtags", add_hashtags);  // Changed to add_hashtags
 
     try {
       const { data } = await axiosReq.post("/posts/", formData);  // POST request to create a new post
@@ -122,24 +104,21 @@ function PostCreateForm() {
         </Alert>
       ))}
 
-      {/* Tags selection field */}
+      {/* Updated tag input field */}
       <Form.Group>
-        <Form.Label>Tags</Form.Label>
+        <Form.Label>Add hashtags</Form.Label>
         <Form.Control
-          as="select"
-          multiple
-          name="tags"
-          value={tags}
-          onChange={handleTagChange}  // Handle changes to tag selection
-        >
-          {availableTags.map((tag) => (
-            <option key={tag.id} value={tag.name}>
-              {tag.name}  {/* Display tag name in the dropdown */}
-            </option>
-          ))}
-        </Form.Control>
+          type="text"
+          name="add_hashtags"
+          value={add_hashtags}
+          onChange={handleChange}
+          placeholder="E.g., nature, travel, food"
+        />
+        <Form.Text className="text-muted">
+          Add words only, separated by commas (e.g., nature, travel, food)
+        </Form.Text>
       </Form.Group>
-      {errors?.tags?.map((message, idx) => (
+      {errors?.add_hashtags?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
           {message}  {/* Display error messages for tags field */}
         </Alert>
@@ -150,10 +129,10 @@ function PostCreateForm() {
         className={`${btnStyles.Button} ${btnStyles.Blue}`}
         onClick={() => history.goBack()}
       >
-        Cancel
+        cancel
       </Button>
       <Button className={`${btnStyles.Button} ${btnStyles.Blue}`} type="submit">
-        Create
+        create
       </Button>
     </div>
   );
