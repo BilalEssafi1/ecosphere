@@ -41,12 +41,14 @@ function PostPage() {
           axiosReq.get(`/posts/${id}`),
           axiosReq.get(`/comments/?post=${id}`),
         ]);
-        console.log("Post data:", post); // Debug log to check post data structure
+        // Debug log to check post data structure
+        console.log("Post data:", post);
         // Update state with fetched data
         setPost(post);
         setComments(comments);
       } catch (err) {
-        console.log("Error:", err); // Debug log for errors
+        // Log any errors that occur during fetch
+        console.log("Error:", err);
         // Store any error responses
         setErrors(err.response?.data || {});
       } finally {
@@ -58,22 +60,32 @@ function PostPage() {
     handleMount();
   }, [id]); // Re-run effect if post ID changes
 
-  // Function to render hashtags from a comma-separated string
+  // Function to render hashtags from a string with error handling
   const renderHashtags = (hashtags) => {
-    if (!hashtags) return null;
+    // Return null if hashtags is undefined, null, or not a string
+    if (!hashtags || typeof hashtags !== 'string') {
+      console.log('Hashtags is not a string:', hashtags);
+      return null;
+    }
     
-    // Split hashtags string into array and trim whitespace
-    const hashtagsArray = hashtags.split(",").map((hashtag) => hashtag.trim());
-    // Map each hashtag to a styled span element
-    return hashtagsArray.map((hashtag, index) => (
-      <span key={index} className="text-primary">
-        #{hashtag}{" "}
-      </span>
-    ));
+    try {
+      // Split hashtags string into array and trim whitespace
+      const hashtagsArray = hashtags.split(",").map((hashtag) => hashtag.trim());
+      // Map each hashtag to a styled span element
+      return hashtagsArray.map((hashtag, index) => (
+        <span key={index} className="text-primary">
+          #{hashtag}{" "}
+        </span>
+      ));
+    } catch (error) {
+      // Log any errors that occur during hashtag processing
+      console.log('Error processing hashtags:', error);
+      return null;
+    }
   };
 
-  // Get hashtags from either tags or add_hashtags field
-  const hashtags = post?.tags || post?.add_hashtags;
+  // Check both possible hashtag fields and provide default empty string
+  const hashtags = post?.tags || post?.add_hashtags || "";
 
   return (
     <Row className="h-100">
@@ -101,9 +113,9 @@ function PostPage() {
             
             {/* Container for hashtags and comments */}
             <Container className={appStyles.Content}>
-              {/* Hashtags section */}
+              {/* Hashtags section - only render if hashtags exist and are valid */}
               <div className="my-3">
-                {hashtags && (
+                {hashtags && typeof hashtags === 'string' && (
                   <div>
                     <strong>Hashtags: </strong>
                     {renderHashtags(hashtags)}
