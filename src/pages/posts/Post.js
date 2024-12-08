@@ -8,6 +8,7 @@ import { axiosRes } from "../../api/axiosDefaults";
 import { MoreDropdown } from "../../components/MoreDropdown";
 
 const Post = (props) => {
+  // Destructure all props
   const {
     id,
     owner,
@@ -22,16 +23,20 @@ const Post = (props) => {
     updated_at,
     postPage,
     setPosts,
+    tags,
   } = props;
 
+  // Get current user context
   const currentUser = useCurrentUser();
   const is_owner = currentUser?.username === owner;
   const history = useHistory();
 
+  // Handle post edit
   const handleEdit = () => {
     history.push(`/posts/${id}/edit`);
   };
 
+  // Handle post deletion
   const handleDelete = async () => {
     try {
       await axiosRes.delete(`/posts/${id}/`);
@@ -40,7 +45,8 @@ const Post = (props) => {
       console.log(err);
     }
   };
-  
+
+  // Handle like functionality
   const handleLike = async () => {
     try {
       const { data } = await axiosRes.post("/likes/", { post: id });
@@ -57,6 +63,7 @@ const Post = (props) => {
     }
   };
 
+  // Handle unlike functionality
   const handleUnlike = async () => {
     try {
       await axiosRes.delete(`/likes/${like_id}/`);
@@ -98,6 +105,18 @@ const Post = (props) => {
       <Card.Body>
         {title && <Card.Title className="text-center">{title}</Card.Title>}
         {content && <Card.Text>{content}</Card.Text>}
+        
+        {/* Display hashtags */}
+        {tags && tags.length > 0 && (
+          <div className={styles.Tags}>
+            {tags.map((tag, index) => (
+              <span key={index} className={styles.Tag}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className={styles.PostBar}>
           {is_owner ? (
             <OverlayTrigger
