@@ -62,8 +62,8 @@ function PostPage() {
 
   // Function to render hashtags from a string with error handling
   const renderHashtags = (hashtags) => {
+    // Check if hashtags is an array (from post.tags), and render tags
     if (Array.isArray(hashtags)) {
-      // If hashtags is an array (from post.tags), display them
       return hashtags.map((hashtag, index) => (
         <span key={index} className="text-primary">
           #{hashtag.name}{" "}
@@ -71,9 +71,9 @@ function PostPage() {
       ));
     }
 
-    // If hashtags is a string (from post.add_hashtags), process it
+    // If hashtags is a string (from post.add_hashtags), split and render them
     if (typeof hashtags === "string") {
-      const hashtagsArray = hashtags.split(",").map((hashtag) => hashtag.trim());
+      const hashtagsArray = hashtags.split(",").map((hashtag) => hashtag.trim()); // Split string into individual hashtags
       return hashtagsArray.map((hashtag, index) => (
         <span key={index} className="text-primary">
           #{hashtag}{" "}
@@ -117,7 +117,7 @@ function PostPage() {
                 {hashtags && (Array.isArray(hashtags) || typeof hashtags === 'string') && (
                   <div>
                     <strong>Hashtags: </strong>
-                    {renderHashtags(hashtags)}
+                    {renderHashtags(hashtags)} {/* Render hashtags here */}
                   </div>
                 )}
               </div>
