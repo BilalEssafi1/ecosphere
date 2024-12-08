@@ -15,34 +15,56 @@ import { fetchMoreData } from "../../utils/utils";
 import PopularProfiles from "../profiles/PopularProfiles";
 
 function PostPage() {
-  const { id } = useParams();  // Get the post ID from the URL
-  const [post, setPost] = useState(null);  // State to store the post data
-  const [comments, setComments] = useState({ results: [] });  // State to store comments for the post
+  // Get the post ID from the URL parameters
+  const { id } = useParams();
+  // State for storing the post data
+  const [post, setPost] = useState(null);
+  // State for storing comments data, initialized with empty results array
+  const [comments, setComments] = useState({ results: [] });
+  // State for handling any errors that occur
+  const [errors, setErrors] = useState({});
+  // State for tracking loading status
+  const [loading, setLoading] = useState(true);
 
-  const currentUser = useCurrentUser();  // Get the current logged-in user (if any)
-  const profile_image = currentUser?.profile_image;  // Get the profile image of the current user
+  // Get the current user and their profile image from context
+  const currentUser = useCurrentUser();
+  const profile_image = currentUser?.profile_image;
 
+  // Effect hook to fetch post and comments data when component mounts or ID changes
   useEffect(() => {
     const handleMount = async () => {
       try {
-        // Fetch the post and its comments when the page is loaded
+        // Set loading state while fetching data
+        setLoading(true);
+        // Fetch both post and comments data simultaneously
         const [{ data: post }, { data: comments }] = await Promise.all([
-          axiosReq.get(`/posts/${id}`),  // Get the post by ID
-          axiosReq.get(`/comments/?post=${id}`),  // Get the comments for the post
+          axiosReq.get(`/posts/${id}`),
+          axiosReq.get(`/comments/?post=${id}`),
         ]);
-        setPost(post);  // Set the post data to state directly
-        setComments(comments);  // Set the comments data to state
+        console.log("Post data:", post); // Debug log to check post data structure
+        // Update state with fetched data
+        setPost(post);
+        setComments(comments);
       } catch (err) {
-        console.log(err);  // Log any error during the fetch
+        console.log("Error:", err); // Debug log for errors
+        // Store any error responses
+        setErrors(err.response?.data || {});
+      } finally {
+        // Always set loading to false when done
+        setLoading(false);
       }
     };
 
-    handleMount();  // Call the function to fetch the data
-  }, [id]);  // The effect runs again if the post ID changes (e.g., navigating to a different post)
+    handleMount();
+  }, [id]); // Re-run effect if post ID changes
 
-  // Function to render hashtags from the post's tags field (assuming backend returns tags array)
+  // Function to render hashtags from a comma-separated string
   const renderHashtags = (hashtags) => {
+    if (!hashtags) return null;
+    
+    // Split hashtags string into array and trim whitespace
     const hashtagsArray = hashtags.split(",").map((hashtag) => hashtag.trim());
+    // Map each hashtag to a styled span element
     return hashtagsArray.map((hashtag, index) => (
       <span key={index} className="text-primary">
         #{hashtag}{" "}
@@ -50,68 +72,92 @@ function PostPage() {
     ));
   };
 
-  // Check if tags field exists and render the appropriate hashtags
+  // Get hashtags from either tags or add_hashtags field
   const hashtags = post?.tags || post?.add_hashtags;
 
   return (
     <Row className="h-100">
-      {/* Left Column - Main content with post details */}
+      {/* Main content column */}
       <Col className="py-2 p-0 p-lg-2" lg={8}>
-        <PopularProfiles mobile /> {/* Display popular profiles in mobile view */}
-        {post && <Post {...post} setPosts={setPost} postPage />} {/* Render the post with post data */}
+        {/* Show popular profiles for mobile view */}
+        <PopularProfiles mobile />
         
-        {/* Main content area for the post, including hashtags and comments */}
-        <Container className={appStyles.Content}>
-          {/* Display hashtags if they exist */}
-          <div className="my-3">
-            {hashtags && (
-              <div>
-                <strong>Hashtags: </strong>
-                {renderHashtags(hashtags)}  {/* Render the hashtags */}
+        {/* Conditional rendering based on loading and error states */}
+        {loading ? (
+          // Show loading spinner while fetching data
+          <Container className={appStyles.Content}>
+            <Asset spinner />
+          </Container>
+        ) : errors?.detail ? (
+          // Show error message if there's an error
+          <Container className={appStyles.Content}>
+            <Asset message={errors.detail} />
+          </Container>
+        ) : post ? (
+          // Show post content if data is loaded successfully
+          <>
+            {/* Render the post component */}
+            <Post {...post} setPosts={setPost} postPage />
+            
+            {/* Container for hashtags and comments */}
+            <Container className={appStyles.Content}>
+              {/* Hashtags section */}
+              <div className="my-3">
+                {hashtags && (
+                  <div>
+                    <strong>Hashtags: </strong>
+                    {renderHashtags(hashtags)}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* If the user is logged in, show the comment creation form */}
-          {currentUser ? (
-            <CommentCreateForm
-              profile_id={currentUser.profile_id}  // Pass the current user's profile ID
-              profileImage={profile_image}  // Pass the current user's profile image
-              post={id}  // Pass the current post ID
-              setPost={setPost}  // Pass the setPost function to update the post data
-              setComments={setComments}  // Pass the setComments function to update the comments
-            />
-          ) : comments.results.length ? (
-            "Comments"  // If the user is not logged in but there are comments, show "Comments"
-          ) : null}
-
-          {/* Display the list of comments for the post */}
-          {comments.results.length ? (
-            <InfiniteScroll
-              children={comments.results.map((comment) => (
-                <Comment
-                  key={comment.id}
-                  {...comment}
-                  setPost={setPost}  // Pass setPost to update the post data after adding a comment
-                  setComments={setComments}  // Pass setComments to update the comments data
+              {/* Comments section - show different content based on user login status */}
+              {currentUser ? (
+                // Show comment form if user is logged in
+                <CommentCreateForm
+                  profile_id={currentUser.profile_id}
+                  profileImage={profile_image}
+                  post={id}
+                  setPost={setPost}
+                  setComments={setComments}
                 />
-              ))}
-              dataLength={comments.results.length}  // Pass the length of comments for scroll tracking
-              loader={<Asset spinner />}  // Show a loading spinner while fetching comments
-              hasMore={!!comments.next}  // Check if there are more comments to load
-              next={() => fetchMoreData(comments, setComments)}  // Fetch more comments when the user scrolls
-            />
-          ) : currentUser ? (
-            <span>No comments yet, be the first to comment!</span>  // If there are no comments and the user is logged in
-          ) : (
-            <span>No comments... yet</span>  // If there are no comments and the user is not logged in
-          )}
-        </Container>
+              ) : comments.results.length ? (
+                // Show "Comments" text if user is not logged in but there are comments
+                "Comments"
+              ) : null}
+
+              {/* Comments display section */}
+              {comments.results.length ? (
+                // Show infinite scroll with comments if there are any
+                <InfiniteScroll
+                  children={comments.results.map((comment) => (
+                    <Comment
+                      key={comment.id}
+                      {...comment}
+                      setPost={setPost}
+                      setComments={setComments}
+                    />
+                  ))}
+                  dataLength={comments.results.length}
+                  loader={<Asset spinner />}
+                  hasMore={!!comments.next}
+                  next={() => fetchMoreData(comments, setComments)}
+                />
+              ) : currentUser ? (
+                // Show message for logged-in users when no comments exist
+                <span>No comments yet, be the first to comment!</span>
+              ) : (
+                // Show message for non-logged-in users when no comments exist
+                <span>No comments... yet</span>
+              )}
+            </Container>
+          </>
+        ) : null}
       </Col>
 
-      {/* Right Column - Popular profiles displayed on larger screens */}
+      {/* Popular profiles column - only shown on larger screens */}
       <Col lg={4} className="d-none d-lg-block p-0 p-lg-2">
-        <PopularProfiles />  {/* Show popular profiles */}
+        <PopularProfiles />
       </Col>
     </Row>
   );
