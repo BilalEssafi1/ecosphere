@@ -22,33 +22,28 @@ const Post = (props) => {
     updated_at,
     postPage,
     setPosts,
-    tags,
   } = props;
 
-  const currentUser = useCurrentUser();  // Get the current logged-in user
-  const is_owner = currentUser?.username === owner;  // Check if the current user is the owner of the post
-  const history = useHistory();  // React Router hook for navigation
+  const currentUser = useCurrentUser();
+  const is_owner = currentUser?.username === owner;
+  const history = useHistory();
 
-  // Handle post edit (navigate to edit page for this post)
   const handleEdit = () => {
     history.push(`/posts/${id}/edit`);
   };
 
-  // Handle post delete (make an API call to delete the post)
   const handleDelete = async () => {
     try {
-      await axiosRes.delete(`/posts/${id}/`);  // Make DELETE request to remove the post
-      history.goBack();  // Navigate the user back after deletion
+      await axiosRes.delete(`/posts/${id}/`);
+      history.goBack();
     } catch (err) {
-      console.log(err);  // Log any errors
+      console.log(err);
     }
   };
-
-  // Handle like action (send a POST request to like the post)
+  
   const handleLike = async () => {
     try {
-      const { data } = await axiosRes.post("/likes/", { post: id });  // Create a new like
-      // Update the state in parent component (to reflect the new likes count)
+      const { data } = await axiosRes.post("/likes/", { post: id });
       setPosts((prevPosts) => ({
         ...prevPosts,
         results: prevPosts.results.map((post) => {
@@ -58,15 +53,13 @@ const Post = (props) => {
         }),
       }));
     } catch (err) {
-      console.log(err);  // Log any errors
+      console.log(err);
     }
   };
 
-  // Handle unlike action (send a DELETE request to remove the like)
   const handleUnlike = async () => {
     try {
-      await axiosRes.delete(`/likes/${like_id}/`);  // Delete the like using like_id
-      // Update the state in parent component (to reflect the new likes count)
+      await axiosRes.delete(`/likes/${like_id}/`);
       setPosts((prevPosts) => ({
         ...prevPosts,
         results: prevPosts.results.map((post) => {
@@ -76,103 +69,64 @@ const Post = (props) => {
         }),
       }));
     } catch (err) {
-      console.log(err);  // Log any errors
+      console.log(err);
     }
-  };
-
-  // Function to render hashtags correctly (either from tags array or comma-separated string)
-  const renderHashtags = () => {
-    // Check if tags is an array
-    if (Array.isArray(tags)) {
-      return tags.map((tag, index) => (
-        <span key={index} className="text-primary">
-          #{tag.name}{" "}  {/* Render each hashtag with # symbol */}
-        </span>
-      ));
-    }
-    // If tags is a string (comma-separated input from `add_hashtags`)
-    if (typeof tags === "string") {
-      const hashtagsArray = tags.split(",").map((tag) => tag.trim());  // Split string into an array
-      return hashtagsArray.map((hashtag, index) => (
-        <span key={index} className="text-primary">
-          #{hashtag}{" "}  {/* Render each hashtag with # symbol */}
-        </span>
-      ));
-    }
-    return null;  // Return null if no hashtags exist
   };
 
   return (
     <Card className={styles.Post}>
       <Card.Body>
-        {/* Media section for post header (profile and post info) */}
         <Media className="align-items-center justify-content-between">
           <Link to={`/profiles/${profile_id}`}>
-            <Avatar src={profile_image} height={55} /> {/* Display the profile image */}
-            {owner}  {/* Display the username of the post owner */}
+            <Avatar src={profile_image} height={55} />
+            {owner}
           </Link>
           <div className="d-flex align-items-center">
-            <span>{updated_at}</span>  {/* Display the updated timestamp */}
+            <span>{updated_at}</span>
             {is_owner && postPage && (
               <MoreDropdown
-                handleEdit={handleEdit}  // Edit post option
-                handleDelete={handleDelete}  // Delete post option
+                handleEdit={handleEdit}
+                handleDelete={handleDelete}
               />
             )}
           </div>
         </Media>
       </Card.Body>
       <Link to={`/posts/${id}`}>
-        <Card.Img src={image} alt={title} />  {/* Display the post image */}
+        <Card.Img src={image} alt={title} />
       </Link>
       <Card.Body>
-        {title && <Card.Title className="text-center">{title}</Card.Title>}  {/* Render post title */}
-        {content && <Card.Text>{content}</Card.Text>}  {/* Render post content */}
-        
-        {/* Render hashtags section */}
-        <div>
-          {tags && (
-            <div>
-              <strong>Hashtags: </strong>
-              {renderHashtags()}  {/* Render hashtags using the renderHashtags function */}
-            </div>
-          )}
-        </div>
-
-        {/* Post actions (like, comment, etc.) */}
+        {title && <Card.Title className="text-center">{title}</Card.Title>}
+        {content && <Card.Text>{content}</Card.Text>}
         <div className={styles.PostBar}>
-          {/* Prevent liking your own post */}
           {is_owner ? (
             <OverlayTrigger
               placement="top"
               overlay={<Tooltip>You can't like your own post!</Tooltip>}
             >
-              <i className="far fa-heart" />  {/* Disabled like icon */}
+              <i className="far fa-heart" />
             </OverlayTrigger>
           ) : like_id ? (
-            // If the user has already liked the post, allow unliking
             <span onClick={handleUnlike}>
-              <i className={`fas fa-heart ${styles.Heart}`} />  {/* Active like icon */}
+              <i className={`fas fa-heart ${styles.Heart}`} />
             </span>
           ) : currentUser ? (
-            // If the user hasn't liked the post, allow liking
             <span onClick={handleLike}>
-              <i className={`far fa-heart ${styles.HeartOutline}`} />  {/* Outline like icon */}
+              <i className={`far fa-heart ${styles.HeartOutline}`} />
             </span>
           ) : (
-            // If the user is not logged in, show a tooltip
             <OverlayTrigger
               placement="top"
               overlay={<Tooltip>Log in to like posts!</Tooltip>}
             >
-              <i className="far fa-heart" />  {/* Disabled like icon */}
+              <i className="far fa-heart" />
             </OverlayTrigger>
           )}
-          {likes_count}  {/* Display the number of likes */}
+          {likes_count}
           <Link to={`/posts/${id}`}>
-            <i className="far fa-comments" />  {/* Comments icon */}
+            <i className="far fa-comments" />
           </Link>
-          {comments_count}  {/* Display the number of comments */}
+          {comments_count}
         </div>
       </Card.Body>
     </Card>
