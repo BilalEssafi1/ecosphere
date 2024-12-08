@@ -106,15 +106,14 @@ function PostPage() {
             <Asset message={errors.detail} />
           </Container>
         ) : post ? (
-          // Show post content if data is loaded successfully
           <>
             {/* Render the post component */}
             <Post {...post} setPosts={setPost} postPage />
-            
-            {/* Container for hashtags and comments */}
+
+            {/* Hashtags section - render right after the post content */}
             <Container className={appStyles.Content}>
-              {/* Hashtags section - only render if hashtags exist and are valid */}
               <div className="my-3">
+                {/* Render hashtags only if they exist and are valid */}
                 {hashtags && typeof hashtags === 'string' && (
                   <div>
                     <strong>Hashtags: </strong>
@@ -123,9 +122,8 @@ function PostPage() {
                 )}
               </div>
 
-              {/* Comments section - show different content based on user login status */}
+              {/* Comments section */}
               {currentUser ? (
-                // Show comment form if user is logged in
                 <CommentCreateForm
                   profile_id={currentUser.profile_id}
                   profileImage={profile_image}
@@ -134,13 +132,11 @@ function PostPage() {
                   setComments={setComments}
                 />
               ) : comments.results.length ? (
-                // Show "Comments" text if user is not logged in but there are comments
                 "Comments"
               ) : null}
 
-              {/* Comments display section */}
+              {/* Display Comments */}
               {comments.results.length ? (
-                // Show infinite scroll with comments if there are any
                 <InfiniteScroll
                   children={comments.results.map((comment) => (
                     <Comment
@@ -156,10 +152,8 @@ function PostPage() {
                   next={() => fetchMoreData(comments, setComments)}
                 />
               ) : currentUser ? (
-                // Show message for logged-in users when no comments exist
                 <span>No comments yet, be the first to comment!</span>
               ) : (
-                // Show message for non-logged-in users when no comments exist
                 <span>No comments... yet</span>
               )}
             </Container>
