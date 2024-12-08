@@ -42,12 +42,19 @@ function PostEditForm() {
       try {
         // Fetch post data from the server using the post ID
         const { data } = await axiosReq.get(`/posts/${id}/`);
-        const { title, content, image, add_hashtags, is_owner } = data;
+        const { title, content, image, is_owner, tags } = data;
 
         // Check if the current user is the owner of the post
         if (is_owner) {
           // If so, populate the state with the post data
-          setPostData({ title, content, image, add_hashtags });
+          // Convert tags array to comma-separated string for editing
+          setPostData({ 
+            title, 
+            content, 
+            image,
+            // Join tags with commas and handle case where tags might be null
+            add_hashtags: tags ? tags.join(", ") : "" 
+          });
         } else {
           // If not, redirect the user to the home page
           history.push("/");
@@ -85,10 +92,17 @@ function PostEditForm() {
 
     const formData = new FormData();
 
-    // Append title, content, and hashtags to the FormData
+    // Append title and content to the FormData
     formData.append("title", title);
     formData.append("content", content);
-    formData.append("add_hashtags", add_hashtags);  // Include the hashtags
+
+    // Clean up hashtags: remove extra spaces, split by comma, trim each tag
+    const cleanedTags = add_hashtags
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
+      .join(",");
+    formData.append("add_hashtags", cleanedTags);
 
     // If a new image is selected, append it to the FormData
     if (imageInput?.current?.files[0]) {
@@ -158,7 +172,7 @@ function PostEditForm() {
           placeholder="E.g., nature, travel, food"
         />
         <Form.Text className="text-muted">
-          Add words only, separated by commas (e.g., nature, travel, food)
+          Add words only, separated by commas. Spaces will be automatically removed.
         </Form.Text>
       </Form.Group>
       {/* Display errors related to the hashtags field */}
