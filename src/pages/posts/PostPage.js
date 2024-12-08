@@ -41,9 +41,8 @@ function PostPage() {
     handleMount();  // Call the function to fetch the data
   }, [id]);  // The effect runs again if the post ID changes (e.g., navigating to a different post)
 
-  // Function to render hashtags from the post's add_hashtags field
+  // Function to render hashtags from the post's tags field (assuming backend returns tags array)
   const renderHashtags = (hashtags) => {
-    // Split the hashtags string by commas, remove spaces, and return them as clickable spans
     const hashtagsArray = hashtags.split(",").map((hashtag) => hashtag.trim());
     return hashtagsArray.map((hashtag, index) => (
       <span key={index} className="text-primary">
@@ -51,6 +50,9 @@ function PostPage() {
       </span>
     ));
   };
+
+  // Check if tags field exists and render the appropriate hashtags
+  const hashtags = post.results[0]?.tags || post.results[0]?.add_hashtags;
 
   return (
     <Row className="h-100">
@@ -63,10 +65,10 @@ function PostPage() {
         <Container className={appStyles.Content}>
           {/* Display hashtags if they exist */}
           <div className="my-3">
-            {post.results[0]?.add_hashtags && (
+            {hashtags && (
               <div>
                 <strong>Hashtags: </strong>
-                {renderHashtags(post.results[0].add_hashtags)}  {/* Render the hashtags */}
+                {renderHashtags(hashtags)}  {/* Render the hashtags */}
               </div>
             )}
           </div>
