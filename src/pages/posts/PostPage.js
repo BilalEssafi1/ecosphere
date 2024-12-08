@@ -62,31 +62,30 @@ function PostPage() {
 
   // Function to render hashtags from a string with error handling
   const renderHashtags = (hashtags) => {
-    // Return null if hashtags is undefined, null, or not a string
-    if (!hashtags || typeof hashtags !== 'string') {
-      console.log('Hashtags is not a string:', hashtags);
-      return null;
+    if (Array.isArray(hashtags)) {
+      // If hashtags is an array (from post.tags), display them
+      return hashtags.map((hashtag, index) => (
+        <span key={index} className="text-primary">
+          #{hashtag.name}{" "}
+        </span>
+      ));
     }
-    
-    try {
-      // Split hashtags string into array and trim whitespace
+
+    // If hashtags is a string (from post.add_hashtags), process it
+    if (typeof hashtags === "string") {
       const hashtagsArray = hashtags.split(",").map((hashtag) => hashtag.trim());
-      // Map each hashtag to a styled span element
       return hashtagsArray.map((hashtag, index) => (
         <span key={index} className="text-primary">
           #{hashtag}{" "}
         </span>
       ));
-    } catch (error) {
-      // Log any errors that occur during hashtag processing
-      console.log('Error processing hashtags:', error);
-      return null;
     }
+
+    return null; // Return null if there are no hashtags
   };
 
   // Check both possible hashtag fields and provide default empty string
   const hashtags = post?.tags || post?.add_hashtags || "";
-  console.log("Hashtags:", hashtags);
 
   return (
     <Row className="h-100">
@@ -115,7 +114,7 @@ function PostPage() {
             <Container className={appStyles.Content}>
               <div className="my-3">
                 {/* Render hashtags only if they exist and are valid */}
-                {hashtags && typeof hashtags === 'string' && (
+                {hashtags && (Array.isArray(hashtags) || typeof hashtags === 'string') && (
                   <div>
                     <strong>Hashtags: </strong>
                     {renderHashtags(hashtags)}
