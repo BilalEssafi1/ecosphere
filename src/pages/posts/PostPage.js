@@ -60,33 +60,6 @@ function PostPage() {
     handleMount();
   }, [id]); // Re-run effect if post ID changes
 
-  // Function to render hashtags from a string with error handling
-  const renderHashtags = (hashtags) => {
-    // Check if hashtags is an array (from post.tags), and render tags
-    if (Array.isArray(hashtags)) {
-      return hashtags.map((hashtag, index) => (
-        <span key={index} className="text-primary">
-          #{hashtag.name}{" "}
-        </span>
-      ));
-    }
-
-    // If hashtags is a string (from post.add_hashtags), split and render them
-    if (typeof hashtags === "string") {
-      const hashtagsArray = hashtags.split(",").map((hashtag) => hashtag.trim()); // Split string into individual hashtags
-      return hashtagsArray.map((hashtag, index) => (
-        <span key={index} className="text-primary">
-          #{hashtag}{" "}
-        </span>
-      ));
-    }
-
-    return null; // Return null if there are no hashtags
-  };
-
-  // Check both possible hashtag fields and provide default empty string
-  const hashtags = post?.tags || post?.add_hashtags || "";
-
   return (
     <Row className="h-100">
       {/* Main content column */}
@@ -110,19 +83,8 @@ function PostPage() {
             {/* Render the post component */}
             <Post {...post} setPosts={setPost} postPage />
 
-            {/* Hashtags section - render right after the post content */}
+            {/* Comments section */}
             <Container className={appStyles.Content}>
-              <div className="my-3">
-                {/* Render hashtags only if they exist and are valid */}
-                {hashtags && (Array.isArray(hashtags) || typeof hashtags === 'string') && (
-                  <div>
-                    <strong>Hashtags: </strong>
-                    {renderHashtags(hashtags)} {/* Render hashtags here */}
-                  </div>
-                )}
-              </div>
-
-              {/* Comments section */}
               {currentUser ? (
                 <CommentCreateForm
                   profile_id={currentUser.profile_id}
