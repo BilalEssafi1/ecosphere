@@ -43,8 +43,12 @@ function SignInForm() {
       // If successful, update the current user context
       setCurrentUser(data.user);
 
+      // Store the access and refresh token in localStorage
+      localStorage.setItem("access_token", data.access);
+      localStorage.setItem("refresh_token", data.refresh);
+
       // Redirect the user to the homepage after login
-      history.push("/");
+      history.push("/");  // Navigate to homepage
     } catch (err) {
       // If there's an error, update the errors state with the response data
       console.error("Login error:", err.response?.data || err.message); // Debugging added to inspect errors
@@ -80,7 +84,7 @@ function SignInForm() {
                 name="username"
                 className={styles.Input}
                 value={username}
-                onChange={handleChange} // Update the state on input change
+                onChange={handleChange}
               />
             </Form.Group>
             {/* Display errors for username if any */}
@@ -99,7 +103,7 @@ function SignInForm() {
                 name="password"
                 className={styles.Input}
                 value={password}
-                onChange={handleChange} // Update the state on input change
+                onChange={handleChange}
               />
             </Form.Group>
             {/* Display errors for password if any */}
@@ -154,3 +158,4 @@ function SignInForm() {
 }
 
 export default SignInForm;
+
