@@ -31,18 +31,39 @@ axiosReq.interceptors.request.use(
 );
 
 /**
- * Request interceptor for axiosRes
- * Adds authentication token to all response requests if available
+ * Response interceptor for axiosRes
+ * Handles refreshing tokens if access token has expired
  */
-axiosRes.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+axiosRes.interceptors.response.use(
+  (response) => response, // Pass through responses with no errors
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Check if the error is due to an expired access token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true; // Prevent infinite retry loops
+      try {
+        // Attempt to refresh the token
+        const { data } = await axios.post("/dj-rest-auth/token/refresh/", {}, {
+          withCredentials: true,
+        });
+
+        // Save the new access token
+        localStorage.setItem("access_token", data.access);
+
+        // Update the Authorization header and retry the failed request
+        axios.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
+        originalRequest.headers["Authorization"] = `Bearer ${data.access}`;
+
+        return axiosRes(originalRequest);
+      } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+        // Clear tokens and redirect to login page if refresh fails
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        window.location.href = "/signin"; // Redirect to sign-in page
+      }
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+    return Promise.reject(error); // Reject errors for other statuses
   }
 );

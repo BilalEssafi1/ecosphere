@@ -1,70 +1,120 @@
-# Getting Started with Create React App
+# Welcome to Dar Tangier
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+[View the live project here](https://ecosphere-social-8d56a42d0db7.herokuapp.com/)
 
-## Available Scripts
+Ecosphere is a social media platform designed to connect users who are passionate about sustainability and eco-friendly living. The platform allows users to share posts, follow other users, like and comment on posts, and engage in a community focused on environmental awareness. This project was developed as part of the Code Institute's fourth Project Portfolio.
 
-In the project directory, you can run:
+# Table of Contents
+1. [UX](#ux)
+2. [Agile Development](#agile-development)
+3. [Features Implemented](#features-implemented)
+4. [Technology Used](#technology-used)
+5. [Testing](#testing)
+6. [Bugs](#bugs)
+7. [Deployment](#deployment)
+8. [Credits and Acknowledgements](#credits-and-acknowledgement)
 
-### `npm start`
+# UX
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Goals and Target Audience
+Ecosphere is designed for individuals who are passionate about sustainability and eco-friendly living. The website provides essential features for easy navigation, user engagement, and community building, suitable for individuals, families, and groups looking to connect and share their experiences and knowledge about environmental awareness.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Design 
+The Ecosphere website embraces a color palette inspired by nature, with earthy and inviting tones that reflect the theme of sustainability:
 
-### `npm test`
+Green and Earthy Tones: Rich shades of green and earthy tones are used as primary colors, evoking the natural warmth and sophistication associated with environmental awareness.
+Accents of Blue and White: These accents are used sparingly to highlight call-to-action buttons, enhancing user navigation while fitting the theme of sustainability and clarity.
+Light and Airy Backgrounds: These tones provide a clean and welcoming background that contrasts beautifully with the deeper colors, ensuring readability and a visually pleasing experience.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+This color scheme not only aligns with the theme of sustainability but also helps create an inviting, elegant atmosphere for users exploring the platform’s offerings and engaging with the community.
 
-### `npm run build`
+## Database planning
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Final data structure
+![Screenshot database structure](src/assets/api-database.png)
+After refining the project and finalizing essential features, I created the database schema to accommodate specific requirements for user management, post creation, and community engagement. Using Creately, I visually outlined the final data structure, focusing on the User, Post, Comment, Like, and Profile tables, and their relationships.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Wireframes
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Large and medium screens
+![Screenshot wireframe homepage large screen]()
 
-### `npm run eject`
+![Screenshot wireframe menu page large screen]()
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+![Screenshot wireframe manage-reservation add post large screen]()
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+![Screenshot wireframe profile page large screen]()
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### Small screens
 
-## Learn More
+![Screenshot wireframe homepage small screen]()
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+![Screenshot wireframe menu page small screen]()
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+![Screenshot wireframe manage-reservation add post small screen]()
 
-### Code Splitting
+![Screenshot wireframe profile page small screen]()
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-### Analyzing the Bundle Size
+# Agile Development
+## Overview
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-### Making a Progressive Web App
+## User Stories
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-### Advanced Configuration
+### List of User Stories
+1. [User Story: Home Page](https://github.com/BilalEssafi1/dar-tangier-project/issues/15)
+2. [User Story: Admin Panel](https://github.com/BilalEssafi1/dar-tangier-project/issues/22)
+3. [User Story: Sign-Up for Account](https://github.com/BilalEssafi1/dar-tangier-project/issues/16)
+4. [User Story: Sign-In to Account](https://github.com/BilalEssafi1/dar-tangier-project/issues/17)
+5. [User Story: Manage Reservations](https://github.com/BilalEssafi1/dar-tangier-project/issues/18)
+6. [User Story: Delete Account](https://github.com/BilalEssafi1/dar-tangier-project/issues/19)
+7. [User Story: Forgot Password](https://github.com/BilalEssafi1/dar-tangier-project/issues/20)
+8. [User Story: Manage User Information](https://github.com/BilalEssafi1/dar-tangier-project/issues/21)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-### Deployment
+# Features Implemented
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
-### `npm run build` fails to minify
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+# Testing
+
+## Validator Testing
+
+- HTML
+    - No errors were returned when passing through the official W3C validator.
+![Screenshot html testing](static/assets/images/readme/html-validation.png)
+
+- CSS
+    - No errors were returned when passing through the official Jigsaw validator.
+![Screenshot html testing](static/assets/images/readme/css-validation.png)
+
+- JavaScript
+    - No significant issues were returned when passing the code through Jshint.
+![Screenshot javascript testing](static/assets/images/readme/jshint-validation.png)
+
+- PEP8 Validation: The code was validated using PEP8 style guide without any errors.
+![Screenshot javascript testing](static/assets/images/readme/pep8-validation.png)
+
+- Accessibility
+    - I confirmed that the colors and fonts chosen are easy to read and accessible by running it through lighthouse in devtools.
+![Screenshot accessibility testing](static/assets/images/readme/accessibility.png)
+
+## Manual testing
+
+
+# Bugs
+
+## Solved Bugs
+
+
+# Deployment
+
+## Steps for Deploying a Django Application on Heroku
+1
+## Forking and Cloning a GitHub Repository
+
+# Credits and Acknowledgement
