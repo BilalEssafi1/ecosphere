@@ -1,132 +1,69 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
-import { axiosReq, axiosRes } from "../api/axiosDefaults";
-import { useHistory } from "react-router";
-import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
+
+// Set base URL for API requests
+axios.defaults.baseURL = "https://drf-api-green-social-61be33473742.herokuapp.com/";
+// Set default content type for POST requests
+axios.defaults.headers.post["Content-Type"] = "application/json";
+// Enable credentials for cross-origin requests
+axios.defaults.withCredentials = true;
+
+// Create axios instances for requests and responses
+export const axiosReq = axios.create();
+export const axiosRes = axios.create();
 
 /**
- * Context for storing and accessing the current user data
+ * Request interceptor for axiosReq
+ * Adds authentication token to all requests if available
  */
-export const CurrentUserContext = createContext();
-export const SetCurrentUserContext = createContext();
-
-export const useCurrentUser = () => useContext(CurrentUserContext);
-export const useSetCurrentUser = () => useContext(SetCurrentUserContext);
+axiosReq.interceptors.request.use(
+  (config) => {
+    // Get token from localStorage
+    const token = localStorage.getItem("access_token");
+    // Add token to headers if it exists
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 /**
- * Provider component that wraps app to provide current user context
+ * Response interceptor for axiosRes
+ * Handles refreshing tokens if access token has expired
  */
-export const CurrentUserProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const history = useHistory();
+axiosRes.interceptors.response.use(
+  (response) => response, // Pass through responses with no errors
+  async (error) => {
+    const originalRequest = error.config;
 
-  /**
-   * Handle user logout and cleanup
-   * Memoized to prevent recreation and fix dependency warnings
-   */
-  const handleLogout = useCallback(() => {
-    setCurrentUser(null);
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    removeTokenTimestamp();
-    history.push("/signin");  // Redirect to the login page
-  }, [history]);
+    // Check if the error is due to an expired access token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true; // Prevent infinite retry loops
+      try {
+        // Attempt to refresh the token
+        const { data } = await axios.post("/dj-rest-auth/token/refresh/", {}, {
+          withCredentials: true,
+        });
 
-  /**
-   * Refresh access token using refresh token
-   * Memoized to prevent recreation and fix dependency warnings
-   */
-  const refreshToken = useCallback(async () => {
-    try {
-      const refresh = localStorage.getItem("refresh_token");
-      if (!refresh) {
-        handleLogout();
-        return null;
-      }
+        // Save the new access token
+        localStorage.setItem("access_token", data.access);
 
-      const { data } = await axios.post("/dj-rest-auth/token/refresh/", {
-        refresh: refresh
-      });
-      
-      localStorage.setItem("access_token", data.access);  // Save new access token
-      return data.access;
-    } catch (err) {
-      handleLogout();  // Log out if refresh fails
-      return null;
-    }
-  }, [handleLogout]);
+        // Update the Authorization header and retry the failed request
+        axios.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
+        originalRequest.headers["Authorization"] = `Bearer ${data.access}`;
 
-  /**
-   * Fetch current user data using stored token
-   * Memoized to prevent recreation and fix dependency warnings
-   */
-  const handleMount = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        return;
-      }
-
-      const { data } = await axios.get("/dj-rest-auth/user/", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setCurrentUser(data);  // Set the current user if the token is valid
-    } catch (err) {
-      if (err.response?.status === 401) {
-        await refreshToken();  // Attempt token refresh on authentication error
+        return axiosRes(originalRequest);
+      } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+        // Clear tokens and redirect to login page if refresh fails
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        window.location.href = "/signin"; // Redirect to sign-in page
       }
     }
-  }, [refreshToken]);
-
-  // Call handleMount on component mount
-  useEffect(() => {
-    handleMount();
-  }, [handleMount]);
-
-  // Set up axios interceptors
-  useMemo(() => {
-    // Request interceptor: add token to all requests if available
-    axiosReq.interceptors.request.use(
-      async (config) => {
-        let token = localStorage.getItem("access_token");
-
-        // Check if token needs to be refreshed
-        if (shouldRefreshToken()) {
-          token = await refreshToken();  // Attempt token refresh
-        }
-
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (err) => {
-        return Promise.reject(err);
-      }
-    );
-
-    // Response interceptor: handle token expiration
-    axiosRes.interceptors.response.use(
-      (response) => response,  // If no error, just return the response
-      async (err) => {
-        if (err.response?.status === 401) {
-          const token = await refreshToken();  // Refresh token if expired
-          if (token) {
-            const config = err.config;
-            config.headers.Authorization = `Bearer ${token}`;
-            return axios(config);  // Retry the request with new token
-          }
-        }
-        return Promise.reject(err);  // Reject other errors
-      }
-    );
-  }, [refreshToken]);
-
-  return (
-    <CurrentUserContext.Provider value={currentUser}>
-      <SetCurrentUserContext.Provider value={setCurrentUser}>
-        {children}
-      </SetCurrentUserContext.Provider>
-    </CurrentUserContext.Provider>
-  );
-};
+    return Promise.reject(error); // Reject errors for other statuses
+  }
+);
