@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { useHistory } from "react-router";
+import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
 // Contexts to share state and updater functions
 export const CurrentUserContext = createContext();
@@ -32,51 +33,48 @@ export const CurrentUserProvider = ({ children }) => {
 
   // Memoized interceptors for token handling
   useMemo(() => {
-    // Add a request interceptor to refresh tokens if needed
     axiosReq.interceptors.request.use(
       async (config) => {
-        try {
-          // Attempt to refresh tokens
-          await axios.post("/dj-rest-auth/token/refresh/", null, {
-            withCredentials: true, // Ensures cookies are sent
-          });
-        } catch (err) {
-          console.error("Token refresh failed:", err); // Log any token refresh errors
-          setCurrentUser((prevUser) => {
-            if (prevUser) {
-              history.push("/signin"); // Redirect to sign-in if refresh fails
-            }
-            return null;
-          });
-          return config;
-        }
-        return config;
-      },
-      (err) => Promise.reject(err)
-    );
-
-    // Add a response interceptor to handle 401 errors
-    axiosRes.interceptors.response.use(
-      (response) => response, // Pass through successful responses
-      async (err) => {
-        if (err.response?.status === 401) {
+        if (shouldRefreshToken()) {
           try {
-            // Refresh the token on 401 error
-            await axios.post("/dj-rest-auth/token/refresh/", null, {
-              withCredentials: true,
-            });
-            return axios(err.config); // Retry the failed request
+            await axios.post("/dj-rest-auth/token/refresh/");
           } catch (err) {
-            console.error("Token refresh on 401 failed:", err);
-            setCurrentUser((prevUser) => {
-              if (prevUser) {
+            setCurrentUser((prevCurrentUser) => {
+              if (prevCurrentUser) {
                 history.push("/signin");
               }
               return null;
             });
+            removeTokenTimestamp();
+            return config;
           }
         }
-        return Promise.reject(err); // Pass through other errors
+        return config;
+      },
+      (err) => {
+        return Promise.reject(err);
+      }
+    );
+
+    // Add a response interceptor to handle 401 errors
+    axiosRes.interceptors.response.use(
+      (response) => response,
+      async (err) => {
+        if (err.response?.status === 401) {
+          try {
+            await axios.post("/dj-rest-auth/token/refresh/");
+          } catch (err) {
+            setCurrentUser((prevCurrentUser) => {
+              if (prevCurrentUser) {
+                history.push("/signin");
+              }
+              return null;
+            });
+            removeTokenTimestamp();
+          }
+          return axios(err.config);
+        }
+        return Promise.reject(err);
       }
     );
   }, [history]);

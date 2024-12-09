@@ -14,6 +14,7 @@ import appStyles from "../../App.module.css";
 import SignInImage from "../../assets/sign-in.jpg";
 import { useSetCurrentUser } from "../../contexts/CurrentUserContext";
 import { useRedirect } from "../../hooks/useRedirect";
+import { setTokenTimestamp } from "../../utils/utils";
 
 function SignInForm() {
   const setCurrentUser = useSetCurrentUser(); // Context to update the logged-in user
@@ -32,27 +33,15 @@ function SignInForm() {
 
   // Handle form submission
   const handleSubmit = async (event) => {
-    event.preventDefault(); // Prevent default form submission behavior
+    event.preventDefault();
 
     try {
-      // Send a POST request to the login endpoint with the sign-in data
-      const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
-        withCredentials: true, // Ensures cookies for authentication are sent and stored
-      });
-
-      // If successful, update the current user context
+      const { data } = await axios.post("/dj-rest-auth/login/", signInData);
       setCurrentUser(data.user);
-
-      // Store the access and refresh token in localStorage
-      localStorage.setItem("access_token", data.access);
-      localStorage.setItem("refresh_token", data.refresh);
-
-      // Redirect the user to the homepage after login
-      history.push("/");  // Navigate to homepage
+      setTokenTimestamp(data);
+      history.goBack();
     } catch (err) {
-      // If there's an error, update the errors state with the response data
-      console.error("Login error:", err.response?.data || err.message); // Debugging added to inspect errors
-      setErrors(err.response?.data || {});
+      setErrors(err.response?.data);
     }
   };
 
