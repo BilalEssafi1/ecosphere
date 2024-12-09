@@ -30,13 +30,39 @@ function PostsPage({ message, filter = "" }) {
     const controller = new AbortController();
 
     /**
+     * Ensures token is valid and refreshed if needed
+     * Returns true if token is valid, false otherwise
+     */
+    const refreshTokenIfNeeded = async () => {
+      try {
+        const refreshToken = localStorage.getItem("refresh_token");
+        if (!refreshToken) return false;
+
+        const { data } = await axios.post("/dj-rest-auth/token/refresh/", {
+          refresh: refreshToken
+        });
+        localStorage.setItem("access_token", data.access);
+        return true;
+      } catch (err) {
+        console.log("Token refresh failed:", err);
+        return false;
+      }
+    };
+
+    /**
      * Fetches posts from the API with authentication
      * Handles token refresh if needed
      */
     const fetchPosts = async () => {
       try {
-        // Get authentication token
+        // Ensure token is valid before making request
+        const isTokenValid = await refreshTokenIfNeeded();
+        
+        // Get current access token
         const token = localStorage.getItem("access_token");
+        if (!token && !isTokenValid) {
+          throw new Error("No valid authentication token");
+        }
 
         // Make authenticated request
         const { data } = await axiosReq.get(
@@ -52,24 +78,8 @@ function PostsPage({ message, filter = "" }) {
         setHasLoaded(true);
       } catch (err) {
         if (!controller.signal.aborted) {
-          // Handle authentication errors
-          if (err.response?.status === 401) {
-            const refreshToken = localStorage.getItem("refresh_token");
-            if (refreshToken) {
-              try {
-                // Attempt token refresh
-                const response = await axios.post("/dj-rest-auth/token/refresh/", {
-                  refresh: refreshToken
-                });
-                localStorage.setItem("access_token", response.data.access);
-                // Retry the original request
-                fetchPosts();
-              } catch (refreshErr) {
-                console.log("Token refresh failed:", refreshErr);
-              }
-            }
-          }
           console.log("Fetch posts error:", err);
+          setHasLoaded(true); // Set loaded even on error to prevent infinite loading
         }
       }
     };
