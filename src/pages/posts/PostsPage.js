@@ -9,65 +9,91 @@ import appStyles from "../../App.module.css";
 import styles from "../../styles/PostsPage.module.css";
 import { useLocation } from "react-router";
 import { axiosReq } from "../../api/axiosDefaults";
+import axios from "axios";
 import NoResults from "../../assets/no-results.png";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { fetchMoreData } from "../../utils/utils";
 import PopularProfiles from "../profiles/PopularProfiles";
 
+/**
+ * PostsPage Component
+ * Displays a list of posts with search, filter, and infinite scroll functionality
+ */
 function PostsPage({ message, filter = "" }) {
-  // State Management
-  const [posts, setPosts] = useState({ results: [] });  // Store posts data
-  const [hasLoaded, setHasLoaded] = useState(false);   // Track loading state
-  const { pathname } = useLocation();                  // Get current path
-  const [query, setQuery] = useState("");              // Store search query
+  // Initialize states for posts, loading status, and search
+  const [posts, setPosts] = useState({ results: [] });
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const { pathname } = useLocation();
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
-    // Create AbortController for cleanup
     const controller = new AbortController();
 
     /**
-     * Fetches posts from the API based on current filter and search query
-     * Updates posts state and loading status
+     * Fetches posts from the API with authentication
+     * Handles token refresh if needed
      */
     const fetchPosts = async () => {
       try {
+        // Get authentication token
+        const token = localStorage.getItem("access_token");
+        
+        // Make authenticated request
         const { data } = await axiosReq.get(
           `/posts/?${filter}search=${query}`,
-          { signal: controller.signal }
+          { 
+            signal: controller.signal,
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
         );
         setPosts(data);
         setHasLoaded(true);
       } catch (err) {
-        // Only log error if request wasn't aborted
         if (!controller.signal.aborted) {
-          console.log(err);
+          // Handle authentication errors
+          if (err.response?.status === 401) {
+            const refreshToken = localStorage.getItem("refresh_token");
+            if (refreshToken) {
+              try {
+                // Attempt token refresh
+                const response = await axios.post("/dj-rest-auth/token/refresh/", {
+                  refresh: refreshToken
+                });
+                localStorage.setItem("access_token", response.data.access);
+                // Retry the original request
+                fetchPosts();
+              } catch (refreshErr) {
+                console.log("Token refresh failed:", refreshErr);
+              }
+            }
+          }
+          console.log("Fetch posts error:", err);
         }
       }
     };
 
-    // Reset loading state before fetching
+    // Reset loading state and add delay for search
     setHasLoaded(false);
-    
-    // Add delay to prevent too many API requests while typing
     const timer = setTimeout(() => {
       fetchPosts();
     }, 1000);
 
-    // Cleanup function to prevent memory leaks
+    // Cleanup function
     return () => {
-      controller.abort(); // Abort any pending requests
-      clearTimeout(timer); // Clear the timeout
+      controller.abort();
+      clearTimeout(timer);
     };
-  }, [filter, query, pathname]); // Re-run effect when these dependencies change
+  }, [filter, query, pathname]);
 
   return (
     <Row className="h-100">
-      {/* Main Content Column */}
+      {/* Main content column */}
       <Col className="py-2 p-0 p-lg-2" lg={8}>
-        {/* Show popular profiles on mobile */}
         <PopularProfiles mobile />
 
-        {/* Search Bar Section */}
+        {/* Search functionality */}
         <i className={`fas fa-search ${styles.SearchIcon}`} />
         <Form
           className={styles.SearchBar}
@@ -82,11 +108,10 @@ function PostsPage({ message, filter = "" }) {
           />
         </Form>
 
-        {/* Posts Display Section */}
+        {/* Posts display with loading states */}
         {hasLoaded ? (
           <>
             {posts.results.length ? (
-              // Infinite scroll for posts list
               <InfiniteScroll
                 children={posts.results.map((post) => (
                   <Post key={post.id} {...post} setPosts={setPosts} />
@@ -97,21 +122,19 @@ function PostsPage({ message, filter = "" }) {
                 next={() => fetchMoreData(posts, setPosts)}
               />
             ) : (
-              // Display no results message
               <Container className={appStyles.Content}>
                 <Asset src={NoResults} message={message} />
               </Container>
             )}
           </>
         ) : (
-          // Display loading spinner while fetching
           <Container className={appStyles.Content}>
             <Asset spinner />
           </Container>
         )}
       </Col>
 
-      {/* Sidebar Column - Popular Profiles */}
+      {/* Popular profiles sidebar */}
       <Col md={4} className="d-none d-lg-block p-0 p-lg-2">
         <PopularProfiles />
       </Col>
