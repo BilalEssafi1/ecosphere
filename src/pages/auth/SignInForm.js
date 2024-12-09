@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
@@ -19,7 +19,7 @@ import { setTokenTimestamp } from "../../utils/utils";
 /**
  * SignInForm Component
  * Handles user authentication and login process
- * Includes error handling, token management, and responsive design
+ * Includes CSRF token handling and error management
  */
 function SignInForm() {
   // Get the function to update current user from context
@@ -41,21 +41,29 @@ function SignInForm() {
   // Router history for navigation
   const history = useHistory();
 
+  // Get CSRF token on component mount
+  useEffect(() => {
+    // Configure axios defaults
+    axios.defaults.xsrfCookieName = 'csrftoken';
+    axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+    axios.defaults.withCredentials = true;
+  }, []);
+
   /**
    * Handles form submission and user authentication
-   * Manages token storage and user state updates
+   * Includes token storage and error handling
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Make login request
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         headers: {
           "Content-Type": "application/json",
-        }
+        },
+        withCredentials: true,
       });
 
-      // Store authentication tokens
+      // Handle successful login
       if (data.access) {
         localStorage.setItem("access_token", data.access);
       }
@@ -63,16 +71,12 @@ function SignInForm() {
         localStorage.setItem("refresh_token", data.refresh);
       }
 
-      // Update current user context
       setCurrentUser(data.user);
       setTokenTimestamp(data);
-
-      // Redirect to homepage
       history.push("/");
       
     } catch (err) {
-      // Handle and log any errors
-      console.log("Login error:", err.response?.data || err.message);
+      console.log("Login error:", err.response?.data);
       setErrors(err.response?.data || {
         non_field_errors: ["An error occurred. Please try again."]
       });
