@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
@@ -19,49 +19,33 @@ import { setTokenTimestamp } from "../../utils/utils";
 /**
  * SignInForm Component
  * Handles user authentication and login process
- * Includes CSRF token handling and error management
+ * Includes error handling and token management
  */
 function SignInForm() {
-  // Get the function to update current user from context
   const setCurrentUser = useSetCurrentUser();
-  
-  // Redirect already logged-in users
   useRedirect("loggedIn");
-  
-  // Initialize form state
+  const history = useHistory();
+
   const [signInData, setSignInData] = useState({
     username: "",
     password: "",
   });
   const { username, password } = signInData;
-  
-  // State for handling errors
   const [errors, setErrors] = useState({});
-  
-  // Router history for navigation
-  const history = useHistory();
 
-  // Get CSRF token on component mount
-  useEffect(() => {
-    // Configure axios defaults
-    axios.defaults.xsrfCookieName = 'csrftoken';
-    axios.defaults.xsrfHeaderName = 'X-CSRFToken';
-    axios.defaults.withCredentials = true;
-  }, []);
-
-  /**
-   * Handles form submission and user authentication
-   * Includes token storage and error handling
-   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      // Make login request without CSRF token
+      const { data } = await axios.post(
+        "/dj-rest-auth/login/", 
+        signInData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
 
       // Handle successful login
       if (data.access) {
@@ -71,6 +55,7 @@ function SignInForm() {
         localStorage.setItem("refresh_token", data.refresh);
       }
 
+      // Update user context and redirect
       setCurrentUser(data.user);
       setTokenTimestamp(data);
       history.push("/");
@@ -83,10 +68,6 @@ function SignInForm() {
     }
   };
 
-  /**
-   * Handles form input changes
-   * Updates form state as user types
-   */
   const handleChange = (event) => {
     setSignInData({
       ...signInData,
@@ -165,7 +146,7 @@ function SignInForm() {
         </Container>
       </Col>
 
-      {/* Image Column - Only visible on medium and larger screens */}
+      {/* Image Column */}
       <Col
         md={6}
         className={`my-auto d-none d-md-block p-2 ${styles.SignInCol}`}
