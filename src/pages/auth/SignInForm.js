@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import Form from "react-bootstrap/Form";
@@ -20,7 +20,7 @@ import { setTokenTimestamp } from "../../utils/utils";
 /**
  * SignInForm Component
  * Handles user authentication and login process
- * Includes error handling and token management
+ * Includes error handling, token management, and CSRF protection
  */
 function SignInForm() {
   const setCurrentUser = useSetCurrentUser();
@@ -35,43 +35,50 @@ function SignInForm() {
   const [errors, setErrors] = useState({});
 
   /**
-   * Handles form submission for user login.
-   * Includes CSRF token handling for secure requests.
+   * Effect to handle CSRF token setup
+   * Clears old token and fetches new one on component mount
+   */
+  useEffect(() => {
+    // Clear old CSRF token and fetch new one
+    Cookies.remove('csrftoken');
+    axios.get('/dj-rest-auth/user/', { withCredentials: true })
+      .catch(() => {
+        // Ignoring error as 401 is expected for non-authenticated users
+        console.log("Setting up new CSRF token");
+      });
+  }, []);
+
+  /**
+   * Handles form submission for user login
+   * Includes CSRF token and authentication token management
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    // Get CSRF token from cookie
-    const csrftoken = Cookies.get("csrftoken"); // Ensure `csrftoken` is set in the browser cookies
-
     try {
-      // Make login request with CSRF token included
-      const { data } = await axios.post(
-        "/dj-rest-auth/login/", 
-        signInData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrftoken, // Add CSRF token in headers
-          },
-        }
-      );
+      // Make login request with CSRF token
+      const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": Cookies.get('csrftoken'),
+        },
+      });
 
       // Handle successful login
       if (data.access) {
-        localStorage.setItem("access_token", data.access); // Store access token in local storage
+        localStorage.setItem("access_token", data.access);
       }
       if (data.refresh) {
-        localStorage.setItem("refresh_token", data.refresh); // Store refresh token in local storage
+        localStorage.setItem("refresh_token", data.refresh);
       }
 
       // Update user context and redirect
       setCurrentUser(data.user);
       setTokenTimestamp(data);
-      history.push("/"); // Redirect to home page
+      history.push("/");
+      
     } catch (err) {
       console.log("Login error:", err.response?.data);
-      // Set error messages to state for display
       setErrors(err.response?.data || {
         non_field_errors: ["An error occurred. Please try again."],
       });
@@ -79,7 +86,8 @@ function SignInForm() {
   };
 
   /**
-   * Handles input field changes and updates form data.
+   * Handles form input changes
+   * Updates form state as user types
    */
   const handleChange = (event) => {
     setSignInData({
