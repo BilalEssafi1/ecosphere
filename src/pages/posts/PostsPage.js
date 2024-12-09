@@ -9,11 +9,11 @@ import appStyles from "../../App.module.css";
 import styles from "../../styles/PostsPage.module.css";
 import { useLocation } from "react-router";
 import { axiosReq } from "../../api/axiosDefaults";
-import axios from "axios";
 import NoResults from "../../assets/no-results.png";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { fetchMoreData } from "../../utils/utils";
 import PopularProfiles from "../profiles/PopularProfiles";
+import { useCurrentUser } from "../../contexts/CurrentUserContext";
 
 /**
  * PostsPage Component
@@ -25,29 +25,10 @@ function PostsPage({ message, filter = "" }) {
   const [hasLoaded, setHasLoaded] = useState(false);
   const { pathname } = useLocation();
   const [query, setQuery] = useState("");
+  const currentUser = useCurrentUser();
 
   useEffect(() => {
     const controller = new AbortController();
-
-    /**
-     * Ensures token is valid and refreshed if needed
-     * Returns true if token is valid, false otherwise
-     */
-    const refreshTokenIfNeeded = async () => {
-      try {
-        const refreshToken = localStorage.getItem("refresh_token");
-        if (!refreshToken) return false;
-
-        const { data } = await axios.post("/dj-rest-auth/token/refresh/", {
-          refresh: refreshToken
-        });
-        localStorage.setItem("access_token", data.access);
-        return true;
-      } catch (err) {
-        console.log("Token refresh failed:", err);
-        return false;
-      }
-    };
 
     /**
      * Fetches posts from the API with authentication
@@ -55,23 +36,11 @@ function PostsPage({ message, filter = "" }) {
      */
     const fetchPosts = async () => {
       try {
-        // Ensure token is valid before making request
-        const isTokenValid = await refreshTokenIfNeeded();
-        
-        // Get current access token
-        const token = localStorage.getItem("access_token");
-        if (!token && !isTokenValid) {
-          throw new Error("No valid authentication token");
-        }
-
-        // Make authenticated request
+        // Make request without explicitly checking token
         const { data } = await axiosReq.get(
           `/posts/?${filter}search=${query}`,
           { 
             signal: controller.signal,
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
           }
         );
         setPosts(data);
@@ -79,7 +48,7 @@ function PostsPage({ message, filter = "" }) {
       } catch (err) {
         if (!controller.signal.aborted) {
           console.log("Fetch posts error:", err);
-          setHasLoaded(true); // Set loaded even on error to prevent infinite loading
+          setHasLoaded(true); // Set loaded even on error
         }
       }
     };
@@ -95,7 +64,7 @@ function PostsPage({ message, filter = "" }) {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [filter, query, pathname]);
+  }, [filter, query, pathname, currentUser]);
 
   return (
     <Row className="h-100">
