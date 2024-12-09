@@ -15,37 +15,59 @@ import { fetchMoreData } from "../../utils/utils";
 import PopularProfiles from "../profiles/PopularProfiles";
 
 function PostsPage({ message, filter = "" }) {
-  const [posts, setPosts] = useState({ results: [] });
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const { pathname } = useLocation();
-
-  const [query, setQuery] = useState("");
+  // State Management
+  const [posts, setPosts] = useState({ results: [] });  // Store posts data
+  const [hasLoaded, setHasLoaded] = useState(false);   // Track loading state
+  const { pathname } = useLocation();                  // Get current path
+  const [query, setQuery] = useState("");              // Store search query
 
   useEffect(() => {
+    // Create AbortController for cleanup
+    const controller = new AbortController();
+
+    /**
+     * Fetches posts from the API based on current filter and search query
+     * Updates posts state and loading status
+     */
     const fetchPosts = async () => {
       try {
-        const { data } = await axiosReq.get(`/posts/?${filter}search=${query}`);
+        const { data } = await axiosReq.get(
+          `/posts/?${filter}search=${query}`,
+          { signal: controller.signal }
+        );
         setPosts(data);
         setHasLoaded(true);
       } catch (err) {
-        console.log(err);
+        // Only log error if request wasn't aborted
+        if (!controller.signal.aborted) {
+          console.log(err);
+        }
       }
     };
 
+    // Reset loading state before fetching
     setHasLoaded(false);
+    
+    // Add delay to prevent too many API requests while typing
     const timer = setTimeout(() => {
       fetchPosts();
     }, 1000);
 
+    // Cleanup function to prevent memory leaks
     return () => {
-      clearTimeout(timer);
+      controller.abort(); // Abort any pending requests
+      clearTimeout(timer); // Clear the timeout
     };
-  }, [filter, query, pathname]);
+  }, [filter, query, pathname]); // Re-run effect when these dependencies change
 
   return (
     <Row className="h-100">
+      {/* Main Content Column */}
       <Col className="py-2 p-0 p-lg-2" lg={8}>
+        {/* Show popular profiles on mobile */}
         <PopularProfiles mobile />
+
+        {/* Search Bar Section */}
         <i className={`fas fa-search ${styles.SearchIcon}`} />
         <Form
           className={styles.SearchBar}
@@ -60,9 +82,11 @@ function PostsPage({ message, filter = "" }) {
           />
         </Form>
 
+        {/* Posts Display Section */}
         {hasLoaded ? (
           <>
             {posts.results.length ? (
+              // Infinite scroll for posts list
               <InfiniteScroll
                 children={posts.results.map((post) => (
                   <Post key={post.id} {...post} setPosts={setPosts} />
@@ -73,17 +97,21 @@ function PostsPage({ message, filter = "" }) {
                 next={() => fetchMoreData(posts, setPosts)}
               />
             ) : (
+              // Display no results message
               <Container className={appStyles.Content}>
                 <Asset src={NoResults} message={message} />
               </Container>
             )}
           </>
         ) : (
+          // Display loading spinner while fetching
           <Container className={appStyles.Content}>
             <Asset spinner />
           </Container>
         )}
       </Col>
+
+      {/* Sidebar Column - Popular Profiles */}
       <Col md={4} className="d-none d-lg-block p-0 p-lg-2">
         <PopularProfiles />
       </Col>

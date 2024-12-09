@@ -19,27 +19,28 @@ import { setTokenTimestamp } from "../../utils/utils";
 /**
  * SignInForm Component
  * Handles user authentication and login process
- * Includes enhanced error handling and cross-browser cookie support
+ * Includes error handling, cookie management, and responsive design
  */
 function SignInForm() {
-  // Get the function to update current user from context
+  /**
+   * Get context setter function for updating current user
+   * and initialize router history for navigation
+   */
   const setCurrentUser = useSetCurrentUser();
-  
+  const history = useHistory();
+
   // Redirect already logged-in users
   useRedirect("loggedIn");
-  
-  // Initialize form state
+
+  // Form state initialization
   const [signInData, setSignInData] = useState({
     username: "",
     password: "",
   });
   const { username, password } = signInData;
-  
-  // State for handling errors
+
+  // State for handling form errors
   const [errors, setErrors] = useState({});
-  
-  // Router history for navigation
-  const history = useHistory();
 
   /**
    * Handles form submission and user authentication
@@ -48,9 +49,6 @@ function SignInForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Log login attempt for debugging
-      console.log("Attempting login with:", { username });
-
       // Make login request with credentials and proper headers
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         withCredentials: true,
@@ -60,29 +58,17 @@ function SignInForm() {
         }
       });
 
-      // Log response for debugging
-      console.log("Login response:", data);
-
-      // Validate response data
+      // Handle successful login
       if (data && data.user) {
-        // Store tokens if they're included in the response
-        if (data.access_token) {
-          localStorage.setItem("access_token", data.access_token);
-        }
-        if (data.refresh_token) {
-          localStorage.setItem("refresh_token", data.refresh_token);
-        }
-
         // Update current user context
         setCurrentUser(data.user);
-        
         // Set token timestamp for refresh functionality
         setTokenTimestamp(data);
 
-        // Add delay before redirect to ensure state updates
+        // Redirect after a short delay to ensure state updates
         setTimeout(() => {
           history.push("/");
-        }, 100);
+        }, 50);
       } else {
         // Handle invalid response data
         setErrors({ non_field_errors: ["Invalid response from server"] });
