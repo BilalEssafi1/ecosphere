@@ -14,18 +14,59 @@ export const CurrentUserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const history = useHistory();
 
+  /**
+   * Fetches current user data using stored token
+   */
   const handleMount = async () => {
     try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        return;
+      }
+
       const { data } = await axios.get("/dj-rest-auth/user/", {
-        withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
+        headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentUser(data);
     } catch (err) {
-      console.log("User fetch error:", err.response?.status, err.response?.data);
+      if (err.response?.status === 401) {
+        console.log("Token expired or invalid, attempting refresh...");
+        try {
+          await refreshToken();
+        } catch (refreshErr) {
+          console.log("Token refresh failed, redirecting to login");
+          handleLogout();
+        }
+      }
     }
+  };
+
+  /**
+   * Handles token refresh
+   */
+  const refreshToken = async () => {
+    const refresh = localStorage.getItem("refresh_token");
+    if (!refresh) {
+      throw new Error("No refresh token available");
+    }
+
+    const { data } = await axios.post("/dj-rest-auth/token/refresh/", {
+      refresh: refresh
+    });
+    
+    localStorage.setItem("access_token", data.access);
+    return data.access;
+  };
+
+  /**
+   * Handles user logout
+   */
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    removeTokenTimestamp();
+    history.push("/signin");
   };
 
   useEffect(() => {
@@ -33,28 +74,22 @@ export const CurrentUserProvider = ({ children }) => {
   }, []);
 
   useMemo(() => {
+    // Request interceptor
     axiosReq.interceptors.request.use(
       async (config) => {
-        const token = localStorage.getItem("access_token");
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
+        let token = localStorage.getItem("access_token");
 
         if (shouldRefreshToken()) {
           try {
-            const { data } = await axios.post(
-              "/dj-rest-auth/token/refresh/",
-              {},
-              { withCredentials: true }
-            );
-            localStorage.setItem("access_token", data.access);
+            token = await refreshToken();
           } catch (err) {
-            setCurrentUser(null);
-            removeTokenTimestamp();
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            history.push("/signin");
+            handleLogout();
+            return Promise.reject(err);
           }
+        }
+
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
@@ -63,26 +98,18 @@ export const CurrentUserProvider = ({ children }) => {
       }
     );
 
+    // Response interceptor
     axiosRes.interceptors.response.use(
       (response) => response,
       async (err) => {
         if (err.response?.status === 401) {
           try {
-            const { data } = await axios.post(
-              "/dj-rest-auth/token/refresh/",
-              {},
-              { withCredentials: true }
-            );
-            localStorage.setItem("access_token", data.access);
+            const token = await refreshToken();
             const config = err.config;
-            config.headers.Authorization = `Bearer ${data.access}`;
+            config.headers.Authorization = `Bearer ${token}`;
             return axios(config);
-          } catch (err) {
-            setCurrentUser(null);
-            removeTokenTimestamp();
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            history.push("/signin");
+          } catch (refreshErr) {
+            handleLogout();
           }
         }
         return Promise.reject(err);
