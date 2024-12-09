@@ -66,13 +66,22 @@ function PostCreateForm() {
 
     formData.append("title", title);  // Append title to form data
     formData.append("content", content);  // Append content to form data
-    formData.append("image", imageInput.current.files[0]);  // Append image to form data
+    if (imageInput?.current?.files[0]) {
+      formData.append("image", imageInput.current.files[0]);  // Append image to form data
+    }
     formData.append("add_hashtags", add_hashtags);  // Changed to add_hashtags
 
     try {
-      const { data } = await axiosReq.post("/posts/", formData);  // POST request to create a new post
+      // Include authorization token in the request
+      const { data } = await axiosReq.post("/posts/", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`
+        }
+      });
       history.push(`/posts/${data.id}`);  // Redirect to the newly created post
     } catch (err) {
+      console.log("Post creation error:", err);
       if (err.response?.status !== 401) {
         setErrors(err.response?.data);  // Set errors if the request fails
       }
