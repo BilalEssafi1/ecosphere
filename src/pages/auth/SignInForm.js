@@ -19,7 +19,7 @@ import { setTokenTimestamp } from "../../utils/utils";
 /**
  * SignInForm Component
  * Handles user authentication and login process
- * Includes enhanced error handling and token management
+ * Includes error handling, token management, and CSRF protection
  */
 function SignInForm() {
   // Get the function to update current user from context
@@ -42,23 +42,42 @@ function SignInForm() {
   const history = useHistory();
 
   /**
+   * Helper function to get CSRF token from cookies
+   */
+  const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  };
+
+  /**
    * Handles form submission and user authentication
-   * Manages token storage and user state updates
+   * Includes CSRF token handling and token storage
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Make login request with credentials
+      // Get CSRF token
+      const csrftoken = getCookie('csrftoken');
+
+      // Make login request with CSRF token
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         withCredentials: true,
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
+          "X-CSRFToken": csrftoken,
         }
       });
-
-      // Log response for debugging
-      console.log("Login response:", data);
 
       // Store authentication tokens
       if (data.access) {
@@ -72,12 +91,10 @@ function SignInForm() {
       setCurrentUser(data.user);
       setTokenTimestamp(data);
 
-      // Log success and redirect
-      console.log("Login successful, redirecting...");
+      // Redirect to homepage
       history.push("/");
       
     } catch (err) {
-      // Enhanced error handling with logging
       console.log("Login error:", err.response?.data || err.message);
       setErrors(err.response?.data || {
         non_field_errors: ["An error occurred. Please try again."]
