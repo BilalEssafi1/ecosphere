@@ -19,63 +19,66 @@ import { setTokenTimestamp } from "../../utils/utils";
 /**
  * SignInForm Component
  * Handles user authentication and login process
- * Includes error handling, cookie management, and responsive design
+ * Includes enhanced error handling and token management
  */
 function SignInForm() {
-  /**
-   * Get context setter function for updating current user
-   * and initialize router history for navigation
-   */
+  // Get the function to update current user from context
   const setCurrentUser = useSetCurrentUser();
-  const history = useHistory();
-
+  
   // Redirect already logged-in users
   useRedirect("loggedIn");
-
-  // Form state initialization
+  
+  // Initialize form state
   const [signInData, setSignInData] = useState({
     username: "",
     password: "",
   });
   const { username, password } = signInData;
-
-  // State for handling form errors
+  
+  // State for handling errors
   const [errors, setErrors] = useState({});
+  
+  // Router history for navigation
+  const history = useHistory();
 
   /**
    * Handles form submission and user authentication
-   * Includes enhanced error handling and cookie management
+   * Manages token storage and user state updates
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Make login request with credentials and proper headers
+      // Make login request with credentials
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         withCredentials: true,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          "Content-Type": "application/json",
+          "Accept": "application/json",
         }
       });
 
-      // Handle successful login
-      if (data && data.user) {
-        // Update current user context
-        setCurrentUser(data.user);
-        // Set token timestamp for refresh functionality
-        setTokenTimestamp(data);
+      // Log response for debugging
+      console.log("Login response:", data);
 
-        // Redirect after a short delay to ensure state updates
-        setTimeout(() => {
-          history.push("/");
-        }, 50);
-      } else {
-        // Handle invalid response data
-        setErrors({ non_field_errors: ["Invalid response from server"] });
+      // Store authentication tokens
+      if (data.access) {
+        localStorage.setItem("access_token", data.access);
       }
+      if (data.refresh) {
+        localStorage.setItem("refresh_token", data.refresh);
+      }
+
+      // Update current user context
+      setCurrentUser(data.user);
+      setTokenTimestamp(data);
+
+      // Log success and redirect
+      console.log("Login successful, redirecting...");
+      history.push("/");
+      
     } catch (err) {
-      // Enhanced error handling
-      console.error("Login error:", err.response?.data || err);
+      // Enhanced error handling with logging
+      console.log("Login error:", err.response?.data || err.message);
       setErrors(err.response?.data || {
         non_field_errors: ["An error occurred. Please try again."]
       });

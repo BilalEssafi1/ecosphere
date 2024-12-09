@@ -4,79 +4,57 @@ import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { useHistory } from "react-router";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
-// Create contexts for current user state
 export const CurrentUserContext = createContext();
 export const SetCurrentUserContext = createContext();
 
-// Custom hooks for accessing context
 export const useCurrentUser = () => useContext(CurrentUserContext);
 export const useSetCurrentUser = () => useContext(SetCurrentUserContext);
 
-/**
- * CurrentUserProvider Component
- * Manages authentication state and token refresh
- */
 export const CurrentUserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const history = useHistory();
 
-  /**
-   * Fetches the current user data
-   * Sets up proper error handling for authentication failures
-   */
   const handleMount = async () => {
     try {
-      const { data } = await axios.get("dj-rest-auth/user/", {
+      const { data } = await axios.get("/dj-rest-auth/user/", {
         withCredentials: true,
         headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        }
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
       });
       setCurrentUser(data);
     } catch (err) {
-      // Only log actual errors, not auth-related 401s
-      if (err.response?.status !== 401) {
-        console.log("Error fetching user:", err);
-      }
+      console.log("User fetch error:", err.response?.status, err.response?.data);
     }
   };
 
-  // Effect to fetch user data on mount
   useEffect(() => {
-    // Only fetch if we don't have a current user
-    if (!currentUser) {
-      handleMount();
-    }
-  }, [currentUser]);
+    handleMount();
+  }, []);
 
-  /**
-   * Sets up axios interceptors for handling token refresh
-   * and authentication errors
-   */
   useMemo(() => {
-    // Request interceptor
     axiosReq.interceptors.request.use(
       async (config) => {
-        try {
-          if (shouldRefreshToken()) {
-            await axios.post(
+        const token = localStorage.getItem("access_token");
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        if (shouldRefreshToken()) {
+          try {
+            const { data } = await axios.post(
               "/dj-rest-auth/token/refresh/",
               {},
-              {
-                withCredentials: true,
-                headers: {
-                  Accept: "application/json",
-                  "Content-Type": "application/json",
-                }
-              }
+              { withCredentials: true }
             );
+            localStorage.setItem("access_token", data.access);
+          } catch (err) {
+            setCurrentUser(null);
+            removeTokenTimestamp();
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            history.push("/signin");
           }
-        } catch (err) {
-          // Handle token refresh failure
-          setCurrentUser(null);
-          removeTokenTimestamp();
-          history.push("/signin");
         }
         return config;
       },
@@ -85,29 +63,25 @@ export const CurrentUserProvider = ({ children }) => {
       }
     );
 
-    // Response interceptor
     axiosRes.interceptors.response.use(
       (response) => response,
       async (err) => {
         if (err.response?.status === 401) {
           try {
-            await axios.post(
+            const { data } = await axios.post(
               "/dj-rest-auth/token/refresh/",
               {},
-              {
-                withCredentials: true,
-                headers: {
-                  Accept: "application/json",
-                  "Content-Type": "application/json",
-                }
-              }
+              { withCredentials: true }
             );
-            // If refresh successful, retry the original request
-            return axios(err.config);
-          } catch (refreshErr) {
-            // If refresh fails, clear user state and redirect
+            localStorage.setItem("access_token", data.access);
+            const config = err.config;
+            config.headers.Authorization = `Bearer ${data.access}`;
+            return axios(config);
+          } catch (err) {
             setCurrentUser(null);
             removeTokenTimestamp();
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
             history.push("/signin");
           }
         }
