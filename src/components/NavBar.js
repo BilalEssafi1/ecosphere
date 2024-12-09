@@ -20,15 +20,41 @@ const NavBar = () => {
 
   const handleSignOut = async () => {
     try {
-      await axios.post("/dj-rest-auth/logout/", {}, {
-        withCredentials: true,
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json"
+      // Get CSRF token
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      // Make logout request with CSRF token
+      await axios.post(
+        "/dj-rest-auth/logout/",
+        {},
+        {
+          withCredentials: true,
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
+
+      // Clear user state and tokens
       setCurrentUser(null);
       removeTokenTimestamp();
+      
+      // Clear any stored tokens
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      
+      // Optional: Clear all cookies
+      document.cookie.split(';').forEach(cookie => {
+        document.cookie = cookie
+          .replace(/^ +/, '')
+          .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+      });
+      
     } catch (err) {
       console.log(err);
     }
