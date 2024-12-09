@@ -18,89 +18,87 @@ import { setTokenTimestamp } from "../../utils/utils";
 
 /**
  * SignInForm Component
- * 
- * This component handles user authentication through a login form.
- * It manages the sign-in process, including:
- * - Form state management for username and password
- * - API communication with the backend
- * - Error handling and display
- * - User redirection after successful login
- * - Token management
+ * Handles user authentication and login process
+ * Includes enhanced error handling and cross-browser cookie support
  */
 function SignInForm() {
-  // Context hook to update the logged-in user throughout the application
+  // Get the function to update current user from context
   const setCurrentUser = useSetCurrentUser();
   
-  // Custom hook to redirect already logged-in users away from the login page
+  // Redirect already logged-in users
   useRedirect("loggedIn");
-
-  // State to store form data (username and password)
+  
+  // Initialize form state
   const [signInData, setSignInData] = useState({
     username: "",
     password: "",
   });
-  
-  // Destructure form data for easier access
   const { username, password } = signInData;
   
-  // State to store and display any error messages
+  // State for handling errors
   const [errors, setErrors] = useState({});
   
-  // Hook for programmatic navigation
+  // Router history for navigation
   const history = useHistory();
 
   /**
-   * Handle form submission
-   * Attempts to authenticate the user and handles the login process
-   * 
-   * @param {Event} event - The form submission event
+   * Handles form submission and user authentication
+   * Includes enhanced error handling and cookie management
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Log the login attempt for debugging
+      // Log login attempt for debugging
       console.log("Attempting login with:", { username });
-      
-      // Send login request to the backend
-      const { data } = await axios.post("/dj-rest-auth/login/", signInData);
+
+      // Make login request with credentials and proper headers
+      const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        }
+      });
+
+      // Log response for debugging
       console.log("Login response:", data);
-      
-      // Validate the response data
-      if (!data || !data.user) {
-        console.error("Invalid response data:", data);
+
+      // Validate response data
+      if (data && data.user) {
+        // Store tokens if they're included in the response
+        if (data.access_token) {
+          localStorage.setItem("access_token", data.access_token);
+        }
+        if (data.refresh_token) {
+          localStorage.setItem("refresh_token", data.refresh_token);
+        }
+
+        // Update current user context
+        setCurrentUser(data.user);
+        
+        // Set token timestamp for refresh functionality
+        setTokenTimestamp(data);
+
+        // Add delay before redirect to ensure state updates
+        setTimeout(() => {
+          history.push("/");
+        }, 100);
+      } else {
+        // Handle invalid response data
         setErrors({ non_field_errors: ["Invalid response from server"] });
-        return;
       }
-
-      // Store authentication tokens in localStorage for persistent sessions
-      if (data.access_token) {
-        localStorage.setItem("access_token", data.access_token);
-      }
-      if (data.refresh_token) {
-        localStorage.setItem("refresh_token", data.refresh_token);
-      }
-
-      // Update the global user context
-      setCurrentUser(data.user);
-      
-      // Set token timestamp for refresh token functionality
-      setTokenTimestamp(data);
-
-      // Add a small delay before redirect to ensure state updates are complete
-      setTimeout(() => {
-        history.goBack();
-      }, 100);
-
     } catch (err) {
-      // Log and handle any errors that occur during login
-      console.error("Login error:", err.response?.data || err.message);
-      setErrors(err.response?.data || { non_field_errors: [err.message] });
+      // Enhanced error handling
+      console.error("Login error:", err.response?.data || err);
+      setErrors(err.response?.data || {
+        non_field_errors: ["An error occurred. Please try again."]
+      });
     }
   };
 
   /**
-   * Handle input field changes
-   * Updates the form state as the user types
+   * Handles form input changes
+   * Updates form state as user types
    */
   const handleChange = (event) => {
     setSignInData({
@@ -111,15 +109,13 @@ function SignInForm() {
 
   return (
     <Row className={styles.Row}>
-      {/* Left Column - Form Section */}
+      {/* Form Column */}
       <Col className="my-auto p-0 p-md-2" md={6}>
         <Container className={`${appStyles.Content} p-4`}>
-          {/* Form Header */}
           <h1 className={styles.Header}>Sign In</h1>
           
-          {/* Sign-in Form */}
           <Form onSubmit={handleSubmit}>
-            {/* Username Input Field */}
+            {/* Username Field */}
             <Form.Group controlId="username">
               <Form.Label className="d-none">Username</Form.Label>
               <Form.Control
@@ -131,14 +127,14 @@ function SignInForm() {
                 onChange={handleChange}
               />
             </Form.Group>
-            {/* Display username-related errors */}
+            {/* Username Errors */}
             {errors.username?.map((message, idx) => (
               <Alert key={idx} variant="warning">
                 {message}
               </Alert>
             ))}
 
-            {/* Password Input Field */}
+            {/* Password Field */}
             <Form.Group controlId="password">
               <Form.Label className="d-none">Password</Form.Label>
               <Form.Control
@@ -150,7 +146,7 @@ function SignInForm() {
                 onChange={handleChange}
               />
             </Form.Group>
-            {/* Display password-related errors */}
+            {/* Password Errors */}
             {errors.password?.map((message, idx) => (
               <Alert key={idx} variant="warning">
                 {message}
@@ -164,8 +160,8 @@ function SignInForm() {
             >
               Sign In
             </Button>
-            
-            {/* Display non-field errors (general form errors) */}
+
+            {/* General Form Errors */}
             {errors.non_field_errors?.map((message, idx) => (
               <Alert key={idx} variant="warning" className="mt-3">
                 {message}
@@ -174,7 +170,7 @@ function SignInForm() {
           </Form>
         </Container>
 
-        {/* Link to Sign Up page for new users */}
+        {/* Sign Up Link */}
         <Container className={`mt-3 ${appStyles.Content}`}>
           <Link className={styles.Link} to="/signup">
             Don't have an account? <span>Sign up now!</span>
@@ -182,7 +178,7 @@ function SignInForm() {
         </Container>
       </Col>
 
-      {/* Right Column - Illustration Section */}
+      {/* Image Column - Only visible on medium and larger screens */}
       <Col
         md={6}
         className={`my-auto d-none d-md-block p-2 ${styles.SignInCol}`}
