@@ -19,7 +19,7 @@ import { setTokenTimestamp } from "../../utils/utils";
 /**
  * SignInForm Component
  * Handles user authentication and login process
- * Includes error handling, token management, and CSRF protection
+ * Includes error handling, token management, and responsive design
  */
 function SignInForm() {
   // Get the function to update current user from context
@@ -42,40 +42,16 @@ function SignInForm() {
   const history = useHistory();
 
   /**
-   * Helper function to get CSRF token from cookies
-   */
-  const getCookie = (name) => {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  };
-
-  /**
    * Handles form submission and user authentication
-   * Includes CSRF token handling and token storage
+   * Manages token storage and user state updates
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Get CSRF token
-      const csrftoken = getCookie('csrftoken');
-
-      // Make login request with CSRF token
+      // Make login request
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
-        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-CSRFToken": csrftoken,
         }
       });
 
@@ -95,6 +71,7 @@ function SignInForm() {
       history.push("/");
       
     } catch (err) {
+      // Handle and log any errors
       console.log("Login error:", err.response?.data || err.message);
       setErrors(err.response?.data || {
         non_field_errors: ["An error occurred. Please try again."]
