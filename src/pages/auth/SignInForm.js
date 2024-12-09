@@ -16,41 +16,96 @@ import { useSetCurrentUser } from "../../contexts/CurrentUserContext";
 import { useRedirect } from "../../hooks/useRedirect";
 import { setTokenTimestamp } from "../../utils/utils";
 
+/**
+ * SignInForm Component
+ * 
+ * This component handles user authentication through a login form.
+ * It manages the sign-in process, including:
+ * - Form state management for username and password
+ * - API communication with the backend
+ * - Error handling and display
+ * - User redirection after successful login
+ * - Token management
+ */
 function SignInForm() {
-  const setCurrentUser = useSetCurrentUser(); // Context to update the logged-in user
-  useRedirect("loggedIn"); // Redirect logged-in users away from the sign-in page
+  // Context hook to update the logged-in user throughout the application
+  const setCurrentUser = useSetCurrentUser();
+  
+  // Custom hook to redirect already logged-in users away from the login page
+  useRedirect("loggedIn");
 
+  // State to store form data (username and password)
   const [signInData, setSignInData] = useState({
     username: "",
     password: "",
-  }); // State to store username and password inputs
+  });
+  
+  // Destructure form data for easier access
+  const { username, password } = signInData;
+  
+  // State to store and display any error messages
+  const [errors, setErrors] = useState({});
+  
+  // Hook for programmatic navigation
+  const history = useHistory();
 
-  const { username, password } = signInData; // Destructure the input fields from the state
-
-  const [errors, setErrors] = useState({}); // State to store error messages
-
-  const history = useHistory(); // React Router's useHistory hook for navigation
-
-  // Handle form submission
+  /**
+   * Handle form submission
+   * Attempts to authenticate the user and handles the login process
+   * 
+   * @param {Event} event - The form submission event
+   */
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     try {
+      // Log the login attempt for debugging
+      console.log("Attempting login with:", { username });
+      
+      // Send login request to the backend
       const { data } = await axios.post("/dj-rest-auth/login/", signInData);
+      console.log("Login response:", data);
+      
+      // Validate the response data
+      if (!data || !data.user) {
+        console.error("Invalid response data:", data);
+        setErrors({ non_field_errors: ["Invalid response from server"] });
+        return;
+      }
+
+      // Store authentication tokens in localStorage for persistent sessions
+      if (data.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+      }
+      if (data.refresh_token) {
+        localStorage.setItem("refresh_token", data.refresh_token);
+      }
+
+      // Update the global user context
       setCurrentUser(data.user);
+      
+      // Set token timestamp for refresh token functionality
       setTokenTimestamp(data);
-      history.goBack();
+
+      // Add a small delay before redirect to ensure state updates are complete
+      setTimeout(() => {
+        history.goBack();
+      }, 100);
+
     } catch (err) {
-      setErrors(err.response?.data);
+      // Log and handle any errors that occur during login
+      console.error("Login error:", err.response?.data || err.message);
+      setErrors(err.response?.data || { non_field_errors: [err.message] });
     }
   };
 
-  // Handle input field changes
+  /**
+   * Handle input field changes
+   * Updates the form state as the user types
+   */
   const handleChange = (event) => {
-    const { name, value } = event.target; // Destructure the name and value from the event
     setSignInData({
-      ...signInData, // Spread the existing state
-      [name]: value, // Update the specific field being changed
+      ...signInData,
+      [event.target.name]: event.target.value,
     });
   };
 
@@ -59,12 +114,12 @@ function SignInForm() {
       {/* Left Column - Form Section */}
       <Col className="my-auto p-0 p-md-2" md={6}>
         <Container className={`${appStyles.Content} p-4`}>
-          {/* Header */}
+          {/* Form Header */}
           <h1 className={styles.Header}>Sign In</h1>
-
+          
           {/* Sign-in Form */}
           <Form onSubmit={handleSubmit}>
-            {/* Username Input */}
+            {/* Username Input Field */}
             <Form.Group controlId="username">
               <Form.Label className="d-none">Username</Form.Label>
               <Form.Control
@@ -76,14 +131,14 @@ function SignInForm() {
                 onChange={handleChange}
               />
             </Form.Group>
-            {/* Display errors for username if any */}
+            {/* Display username-related errors */}
             {errors.username?.map((message, idx) => (
               <Alert key={idx} variant="warning">
                 {message}
               </Alert>
             ))}
 
-            {/* Password Input */}
+            {/* Password Input Field */}
             <Form.Group controlId="password">
               <Form.Label className="d-none">Password</Form.Label>
               <Form.Control
@@ -95,7 +150,7 @@ function SignInForm() {
                 onChange={handleChange}
               />
             </Form.Group>
-            {/* Display errors for password if any */}
+            {/* Display password-related errors */}
             {errors.password?.map((message, idx) => (
               <Alert key={idx} variant="warning">
                 {message}
@@ -109,7 +164,8 @@ function SignInForm() {
             >
               Sign In
             </Button>
-            {/* Display non-field errors if any */}
+            
+            {/* Display non-field errors (general form errors) */}
             {errors.non_field_errors?.map((message, idx) => (
               <Alert key={idx} variant="warning" className="mt-3">
                 {message}
@@ -118,7 +174,7 @@ function SignInForm() {
           </Form>
         </Container>
 
-        {/* Sign-Up Link */}
+        {/* Link to Sign Up page for new users */}
         <Container className={`mt-3 ${appStyles.Content}`}>
           <Link className={styles.Link} to="/signup">
             Don't have an account? <span>Sign up now!</span>
