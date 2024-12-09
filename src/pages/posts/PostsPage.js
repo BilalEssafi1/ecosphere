@@ -37,7 +37,7 @@ function PostsPage({ message, filter = "" }) {
       try {
         // Get authentication token
         const token = localStorage.getItem("access_token");
-        
+
         // Make authenticated request
         const { data } = await axiosReq.get(
           `/posts/?${filter}search=${query}`,
