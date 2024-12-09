@@ -1,76 +1,82 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { useHistory } from "react-router";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
-// Create contexts for current user data and setter function
+// Create contexts for current user state
 export const CurrentUserContext = createContext();
 export const SetCurrentUserContext = createContext();
 
-// Custom hooks for easier context consumption
+// Custom hooks for accessing context
 export const useCurrentUser = () => useContext(CurrentUserContext);
 export const useSetCurrentUser = () => useContext(SetCurrentUserContext);
 
 /**
  * CurrentUserProvider Component
- * Provides authentication state and methods to child components
- * Handles token refresh and authentication error scenarios
+ * Manages authentication state and token refresh
  */
 export const CurrentUserProvider = ({ children }) => {
-  // State to store current user data
   const [currentUser, setCurrentUser] = useState(null);
   const history = useHistory();
 
   /**
-   * Memoized callback for updating user state
-   * Prevents unnecessary re-renders and state update issues
-   */
-  const handleCurrentUser = useCallback((user) => {
-    setCurrentUser(user);
-  }, []);
-
-  /**
-   * Fetches current user data on component mount
-   * Sets initial authentication state
+   * Fetches the current user data
+   * Sets up proper error handling for authentication failures
    */
   const handleMount = async () => {
     try {
       const { data } = await axios.get("dj-rest-auth/user/", {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        }
       });
-      handleCurrentUser(data);
+      setCurrentUser(data);
     } catch (err) {
-      console.log(err);
+      // Only log actual errors, not auth-related 401s
+      if (err.response?.status !== 401) {
+        console.log("Error fetching user:", err);
+      }
     }
   };
 
-  // Initialize user data on mount
+  // Effect to fetch user data on mount
   useEffect(() => {
-    handleMount();
-  }, []);
+    // Only fetch if we don't have a current user
+    if (!currentUser) {
+      handleMount();
+    }
+  }, [currentUser]);
 
   /**
-   * Set up axios interceptors for handling token refresh
-   * Uses useMemo to prevent unnecessary recreation of interceptors
+   * Sets up axios interceptors for handling token refresh
+   * and authentication errors
    */
   useMemo(() => {
-    // Request interceptor - handles token refresh before requests
+    // Request interceptor
     axiosReq.interceptors.request.use(
       async (config) => {
-        if (shouldRefreshToken()) {
-          try {
-            await axios.post("/dj-rest-auth/token/refresh/", {}, {
-              withCredentials: true
-            });
-          } catch (err) {
-            // Handle refresh failure outside of render cycle
-            setTimeout(() => {
-              handleCurrentUser(null);
-              removeTokenTimestamp();
-              history.push("/signin");
-            }, 0);
+        try {
+          if (shouldRefreshToken()) {
+            await axios.post(
+              "/dj-rest-auth/token/refresh/",
+              {},
+              {
+                withCredentials: true,
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                }
+              }
+            );
           }
+        } catch (err) {
+          // Handle token refresh failure
+          setCurrentUser(null);
+          removeTokenTimestamp();
+          history.push("/signin");
         }
         return config;
       },
@@ -79,36 +85,42 @@ export const CurrentUserProvider = ({ children }) => {
       }
     );
 
-    // Response interceptor - handles 401 errors
+    // Response interceptor
     axiosRes.interceptors.response.use(
       (response) => response,
       async (err) => {
         if (err.response?.status === 401) {
           try {
-            await axios.post("/dj-rest-auth/token/refresh/", {}, {
-              withCredentials: true
-            });
+            await axios.post(
+              "/dj-rest-auth/token/refresh/",
+              {},
+              {
+                withCredentials: true,
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                }
+              }
+            );
+            // If refresh successful, retry the original request
             return axios(err.config);
-          } catch (err) {
-            // Handle refresh failure outside of render cycle
-            setTimeout(() => {
-              handleCurrentUser(null);
-              removeTokenTimestamp();
-              history.push("/signin");
-            }, 0);
+          } catch (refreshErr) {
+            // If refresh fails, clear user state and redirect
+            setCurrentUser(null);
+            removeTokenTimestamp();
+            history.push("/signin");
           }
         }
         return Promise.reject(err);
       }
     );
-  }, [history, handleCurrentUser]);
+  }, [history]);
 
   return (
     <CurrentUserContext.Provider value={currentUser}>
-      <SetCurrentUserContext.Provider value={handleCurrentUser}>
+      <SetCurrentUserContext.Provider value={setCurrentUser}>
         {children}
       </SetCurrentUserContext.Provider>
     </CurrentUserContext.Provider>
   );
 };
-
