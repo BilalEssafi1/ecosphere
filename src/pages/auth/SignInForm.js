@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import Cookies from "js-cookie";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
@@ -33,41 +34,53 @@ function SignInForm() {
   const { username, password } = signInData;
   const [errors, setErrors] = useState({});
 
+  /**
+   * Handles form submission for user login.
+   * Includes CSRF token handling for secure requests.
+   */
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    // Get CSRF token from cookie
+    const csrftoken = Cookies.get("csrftoken"); // Ensure `csrftoken` is set in the browser cookies
+
     try {
-      // Make login request without CSRF token
+      // Make login request with CSRF token included
       const { data } = await axios.post(
         "/dj-rest-auth/login/", 
         signInData,
         {
           headers: {
-            'Content-Type': 'application/json',
-          }
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken, // Add CSRF token in headers
+          },
         }
       );
 
       // Handle successful login
       if (data.access) {
-        localStorage.setItem("access_token", data.access);
+        localStorage.setItem("access_token", data.access); // Store access token in local storage
       }
       if (data.refresh) {
-        localStorage.setItem("refresh_token", data.refresh);
+        localStorage.setItem("refresh_token", data.refresh); // Store refresh token in local storage
       }
 
       // Update user context and redirect
       setCurrentUser(data.user);
       setTokenTimestamp(data);
-      history.push("/");
-      
+      history.push("/"); // Redirect to home page
     } catch (err) {
       console.log("Login error:", err.response?.data);
+      // Set error messages to state for display
       setErrors(err.response?.data || {
-        non_field_errors: ["An error occurred. Please try again."]
+        non_field_errors: ["An error occurred. Please try again."],
       });
     }
   };
 
+  /**
+   * Handles input field changes and updates form data.
+   */
   const handleChange = (event) => {
     setSignInData({
       ...signInData,
