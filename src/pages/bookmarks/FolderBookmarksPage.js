@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { axiosReq } from "../../api/axiosDefaults";
-import Asset from "../../components/Asset";
+import Asset from "../../components/Asset"; // Ensure Asset is correctly imported
 import { useParams } from "react-router-dom";
 import styles from "../../styles/FolderBookmarksPage.module.css";
 import Post from "../posts/Post"; // Import the Post component
 
 const FolderBookmarksPage = () => {
   const { folder_id } = useParams(); // Use the folder_id from the URL params
-  const [bookmarks, setBookmarks] = useState({ results: [] });
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [bookmarks, setBookmarks] = useState([]); // Initialize as an empty array
+  const [hasLoaded, setHasLoaded] = useState(false); // Loading state
 
   /**
    * Fetch bookmarks for the specified folder.
@@ -21,17 +21,19 @@ const FolderBookmarksPage = () => {
         setHasLoaded(true); // Mark data as loaded
       } catch (err) {
         console.error("Error fetching bookmarks:", err);
+        setHasLoaded(true);  // Set hasLoaded to true even in case of an error
       }
     };
 
     fetchBookmarks();
-  }, [folder_id]);  // Re-run when folder_id changes
+  }, [folder_id]); // Re-run when folder_id changes
 
   return (
     <div className={styles.FolderBookmarksPage}>
       <h1>Folder Bookmarks</h1>
-      {hasLoaded ? (
-        bookmarks.length ? (
+
+      {hasLoaded ? ( // Once data is loaded, show bookmarks or an empty message
+        bookmarks.length ? ( // Check if bookmarks exist
           bookmarks.map((bookmark) => (
             <div key={bookmark.id} className={styles.BookmarkItem}>
               {/* Pass the bookmark data to the Post component */}
@@ -52,11 +54,11 @@ const FolderBookmarksPage = () => {
               />
             </div>
           ))
-        ) : (
+        ) : ( // If no bookmarks are present
           <p>No bookmarks in this folder yet.</p>
         )
-      ) : (
-        <Asset spinner />  {/* Show loading spinner while data is loading */}
+      ) : ( // If data hasn't loaded yet, show spinner
+        <Asset spinner /> // Show loading spinner while data is loading
       )}
     </div>
   );
