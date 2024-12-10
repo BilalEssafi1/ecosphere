@@ -14,8 +14,8 @@ import ProfilePage from "./pages/profiles/ProfilePage";
 import UsernameForm from "./pages/profiles/UsernameForm";
 import UserPasswordForm from "./pages/profiles/UserPasswordForm";
 import ProfileEditForm from "./pages/profiles/ProfileEditForm";
-import BookmarksPage from "./pages/BookmarksPage";
-import FolderBookmarksPage from "./pages/FolderBookmarksPage";
+import BookmarksPage from "./pages/bookmarks/BookmarksPage";
+import FolderBookmarksPage from "./pages/bookmarks/FolderBookmarksPage";
 
 function App() {
   const currentUser = useCurrentUser();
