@@ -13,16 +13,25 @@ export const axiosRes = axios.create();
 
 /**
  * Request interceptor for axiosReq
- * Adds authentication token to all requests if available
+ * Adds authentication token and CSRF token to all requests if available
  */
 axiosReq.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
+    // Get access token from localStorage
     const token = localStorage.getItem("access_token");
-    // Add token to headers if it exists
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token if it exists in cookies
+    const csrfToken = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("csrftoken="))
+      ?.split("=")[1];
+    if (csrfToken) {
+      config.headers["X-CSRFToken"] = csrfToken;
+    }
+
     return config;
   },
   (error) => {
@@ -35,13 +44,13 @@ axiosReq.interceptors.request.use(
  * Handles refreshing tokens if access token has expired
  */
 axiosRes.interceptors.response.use(
-  (response) => response, // Pass through responses with no errors
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
     // Check if the error is due to an expired access token
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true; // Prevent infinite retry loops
+      originalRequest._retry = true;
       try {
         // Attempt to refresh the token
         const { data } = await axios.post("/dj-rest-auth/token/refresh/", {}, {
@@ -61,9 +70,9 @@ axiosRes.interceptors.response.use(
         // Clear tokens and redirect to login page if refresh fails
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        window.location.href = "/signin"; // Redirect to sign-in page
+        window.location.href = "/signin";
       }
     }
-    return Promise.reject(error); // Reject errors for other statuses
+    return Promise.reject(error);
   }
 );
