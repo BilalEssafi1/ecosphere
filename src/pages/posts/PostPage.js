@@ -17,8 +17,8 @@ import PopularProfiles from "../profiles/PopularProfiles";
 function PostPage() {
   // Get the post ID from the URL parameters
   const { id } = useParams();
-  // State for storing the post data
-  const [post, setPost] = useState(null);
+  // State for storing the post data - initialized with results array to prevent undefined errors
+  const [post, setPost] = useState({ results: [] });
   // State for storing comments data, initialized with empty results array
   const [comments, setComments] = useState({ results: [] });
   // State for handling any errors that occur
@@ -43,8 +43,9 @@ function PostPage() {
         ]);
         // Debug log to check post data structure
         console.log("Post data:", post);
-        // Update state with fetched data
-        setPost(post);
+        // Update state with fetched data, wrapping post in results array
+        // This ensures consistency with the expected data structure
+        setPost({ results: [post] });
         setComments(comments);
       } catch (err) {
         // Log any errors that occur during fetch
@@ -78,10 +79,10 @@ function PostPage() {
           <Container className={appStyles.Content}>
             <Asset message={errors.detail} />
           </Container>
-        ) : post ? (
+        ) : post?.results[0] ? ( // Changed to check for post in results array
           <>
-            {/* Render the post component */}
-            <Post {...post} setPosts={setPost} postPage />
+            {/* Render the post component with the first result */}
+            <Post {...post.results[0]} setPosts={setPost} postPage />
 
             {/* Comments section */}
             <Container className={appStyles.Content}>

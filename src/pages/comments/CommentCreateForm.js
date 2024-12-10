@@ -21,18 +21,19 @@ function CommentCreateForm(props) {
         content,
         post,
       });
+
       setComments((prevComments) => ({
         ...prevComments,
-        results: [data, ...prevComments.results],
+        results: data ? [data, ...prevComments.results] : prevComments.results,
       }));
+
       setPost((prevPost) => ({
-        results: [
-          {
-            ...prevPost.results[0],
-            comments_count: prevPost.results[0].comments_count + 1,
-          },
-        ],
+        results: [{
+          ...prevPost.results[0],
+          comments_count: prevPost.results[0].comments_count + 1,
+        }],
       }));
+
       setContent("");
     } catch (err) {
       console.log(err);
