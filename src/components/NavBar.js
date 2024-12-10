@@ -23,6 +23,7 @@ const NavBar = () => {
   /**
    * Handles user sign out
    * Clears tokens, cookies, and user data
+   * Ensures clean state for next login attempt
    */
   const handleSignOut = async () => {
     try {
@@ -54,15 +55,32 @@ const NavBar = () => {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       
-      // Clear all cookies
-      document.cookie.split(';').forEach(cookie => {
-        document.cookie = cookie
-          .replace(/^ +/, '')
-          .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
-      });
+      // Function to expire and remove a cookie
+      const removeCookie = (name) => {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`;
+      };
+
+      // Clear specific authentication cookies
+      removeCookie('csrftoken');
+      removeCookie('my-app-auth');
+      removeCookie('my-refresh-token');
+      removeCookie('sessionid');
+
+      // Clear all domain cookies if not on localhost
+      if (window.location.hostname !== 'localhost') {
+        const cookies = document.cookie.split(';');
+        cookies.forEach(cookie => {
+          const cookieName = cookie.split('=')[0].trim();
+          removeCookie(cookieName);
+        });
+      }
+
+      // Force reload to signin page for clean state
+      window.location.href = '/signin';
       
     } catch (err) {
-      console.log(err);
+      console.log("Logout error:", err);
     }
   };
 
