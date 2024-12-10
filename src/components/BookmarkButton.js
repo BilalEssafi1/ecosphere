@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import styles from "../styles/BookmarkButton.module.css";
-import { axiosRes } from "../api/axiosDefaults";
+import { axiosReq } from "../api/axiosDefaults";
 import BookmarkFolderModal from "./BookmarkFolderModal";
 
 const BookmarkButton = ({ post, currentUser }) => {
@@ -16,13 +16,21 @@ const BookmarkButton = ({ post, currentUser }) => {
    */
   const handleBookmark = async (folderId) => {
     try {
-      const { data } = await axiosRes.post("/bookmarks/", {
+      const token = localStorage.getItem("access_token");
+      await axiosReq.post("/bookmarks/", {
         post: post.id,
         folder: folderId,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       setIsBookmarked(true);
       setShowModal(false);
     } catch (err) {
+      if (err.response?.status === 401) {
+        console.log("Authentication error when bookmarking");
+      }
       console.log(err);
     }
   };
@@ -33,7 +41,12 @@ const BookmarkButton = ({ post, currentUser }) => {
    */
   const handleUnbookmark = async () => {
     try {
-      await axiosRes.delete(`/bookmarks/${post.bookmark_id}/`);
+      const token = localStorage.getItem("access_token");
+      await axiosReq.delete(`/bookmarks/${post.bookmark_id}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setIsBookmarked(false);
     } catch (err) {
       console.log(err);

@@ -1,7 +1,7 @@
 import styles from "./App.module.css";
 import NavBar from "./components/NavBar";
 import Container from "react-bootstrap/Container";
-import { Route, Switch } from "react-router-dom";
+import { Route, Switch, Redirect } from "react-router-dom";
 import "./api/axiosDefaults";
 import SignUpForm from "./pages/auth/SignUpForm";
 import SignInForm from "./pages/auth/SignInForm";
@@ -57,15 +57,19 @@ function App() {
             )}
           />
 
-          {/* Bookmarked posts route */}
+          {/* Bookmarked posts route - requires authentication */}
           <Route
             exact
             path="/bookmarks"
             render={() => (
-              <PostsPage
-                message="No bookmarked posts yet."
-                filter={`bookmarks__owner__profile=${profile_id}&ordering=-bookmarks__created_at&`}
-              />
+              currentUser ? (
+                <PostsPage
+                  message="No bookmarked posts yet."
+                  filter={`bookmarks__owner__profile=${profile_id}&ordering=-bookmarks__created_at&`}
+                />
+              ) : (
+                <Redirect to="/signin" />
+              )
             )}
           />
 
