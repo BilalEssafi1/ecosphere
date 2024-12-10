@@ -40,11 +40,7 @@ function PostsPage({ message, filter = "" }) {
      */
     const fetchFolders = async () => {
       try {
-        const { data } = await axiosReq.get("/folders/", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`
-          }
-        });
+        const { data } = await axiosReq.get("/folders/");
         setFolders(data.results);
       } catch (err) {
         console.log("Fetch folders error:", err);
@@ -57,25 +53,27 @@ function PostsPage({ message, filter = "" }) {
      */
     const fetchPosts = async () => {
       try {
-        // Get authentication token and set headers
-        const token = localStorage.getItem("access_token");
+        // Only add auth header if we're on a protected route
+        const config = {
+          signal: controller.signal,
+        };
+
+        if (isBookmarksPage) {
+          const token = localStorage.getItem("access_token");
+          config.headers = { Authorization: `Bearer ${token}` };
+        }
+
         const { data } = await axiosReq.get(
           `/posts/?${filter}search=${query}`,
-          { 
-            signal: controller.signal,
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+          config
         );
+        setPosts(data);
+        setHasLoaded(true);
 
-        // If on bookmarks page, fetch folders and organize posts
+        // Fetch folders if on bookmarks page
         if (isBookmarksPage) {
           await fetchFolders();
         }
-
-        setPosts(data);
-        setHasLoaded(true);
       } catch (err) {
         if (!controller.signal.aborted) {
           console.log("Fetch posts error:", err);
@@ -110,7 +108,7 @@ function PostsPage({ message, filter = "" }) {
               <h3 className={styles.FolderTitle}>{folder.name}</h3>
               <div className={styles.FolderPosts}>
                 {posts.results
-                  .filter((post) => post.folder === folder.id)
+                  .filter((post) => post.bookmark_id && post.folder === folder.id)
                   .map((post) => (
                     <Post key={post.id} {...post} setPosts={setPosts} />
                   ))}
