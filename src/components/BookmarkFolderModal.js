@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button } from "react-bootstrap";
-import styles from "../styles/BookmarkFolderModal.module.css";
+import styles from "../styles/FolderBookmarksPage.module.css";
 import { axiosReq } from "../api/axiosDefaults";
 import Asset from "./Asset";
 
