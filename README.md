@@ -70,17 +70,20 @@ I initiated this project with a clear intent to streamline workflow and effectiv
 For a comprehensive overview of the project's progress and workflow, please refer to this Kanban page
 
 ## User Stories
+To kickstart the project, I adopted a user-centric approach. By envisioning myself as a potential user, I identified key features and functionalities that would enhance the website's usability and appeal. I then translated these insights into a set of user stories, prioritizing core features that would provide a solid foundation for the website.
 
+Each user story was broken down into smaller, actionable tasks, allowing for a structured and efficient development process. As I progressed through the development phase, I tracked my progress and documented any challenges or solutions encountered. This approach ensured a transparent and organized development workflow.
+
+By prioritizing user needs and following an agile methodology, I aimed to deliver a high-quality website that meets the expectations of both users and stakeholders.
 
 ### List of User Stories
-1. [User Story: Home Page](https://github.com/BilalEssafi1/dar-tangier-project/issues/15)
-2. [User Story: Admin Panel](https://github.com/BilalEssafi1/dar-tangier-project/issues/22)
-3. [User Story: Sign-Up for Account](https://github.com/BilalEssafi1/dar-tangier-project/issues/16)
-4. [User Story: Sign-In to Account](https://github.com/BilalEssafi1/dar-tangier-project/issues/17)
-5. [User Story: Manage Reservations](https://github.com/BilalEssafi1/dar-tangier-project/issues/18)
-6. [User Story: Delete Account](https://github.com/BilalEssafi1/dar-tangier-project/issues/19)
-7. [User Story: Forgot Password](https://github.com/BilalEssafi1/dar-tangier-project/issues/20)
-8. [User Story: Manage User Information](https://github.com/BilalEssafi1/dar-tangier-project/issues/21)
+1. [User Story: Home Page](https://github.com/BilalEssafi1/ecosphere/issues/12)
+2. [User Story: Sign-Up for Account](https://github.com/BilalEssafi1/ecosphere/issues/13)
+4. [User Story: Sign-In to Account](https://github.com/BilalEssafi1/ecosphere/issues/14)
+5. [User Story: Create Post](https://github.com/BilalEssafi1/ecosphere/issues/15)
+6. [User Story: Follow Users](https://github.com/BilalEssafi1/ecosphere/issues/16)
+7. [User Story: Like, Comment and Bookmark Posts](https://github.com/BilalEssafi1/ecosphere/issues/17)
+8. [User Story: Edit Profile](https://github.com/BilalEssafi1/ecosphere/issues/18)
 
 
 # Features Implemented
