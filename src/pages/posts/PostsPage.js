@@ -27,10 +27,6 @@ function PostsPage({ message, filter = "" }) {
   const [query, setQuery] = useState("");
   const currentUser = useCurrentUser();
 
-  // Add state for bookmark folders
-  const [folders, setFolders] = useState([]);
-  const isBookmarksPage = pathname === "/bookmarks";
-
   useEffect(() => {
     const controller = new AbortController();
 
@@ -40,6 +36,7 @@ function PostsPage({ message, filter = "" }) {
      */
     const fetchPosts = async () => {
       try {
+        // Make request without explicitly checking token
         const { data } = await axiosReq.get(
           `/posts/?${filter}search=${query}`,
           { 
@@ -48,20 +45,10 @@ function PostsPage({ message, filter = "" }) {
         );
         setPosts(data);
         setHasLoaded(true);
-
-        // If on bookmarks page, fetch folders
-        if (isBookmarksPage && currentUser) {
-          try {
-            const { data: folderData } = await axiosReq.get("/folders/");
-            setFolders(folderData.results);
-          } catch (err) {
-            console.log("Fetch folders error:", err);
-          }
-        }
       } catch (err) {
         if (!controller.signal.aborted) {
           console.log("Fetch posts error:", err);
-          setHasLoaded(true);
+          setHasLoaded(true); // Set loaded even on error
         }
       }
     };
@@ -77,44 +64,7 @@ function PostsPage({ message, filter = "" }) {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [filter, query, pathname, currentUser, isBookmarksPage]);
-
-  /**
-   * Renders posts either grouped by folders (bookmarks page)
-   * or in standard list view (other pages)
-   */
-  const renderPosts = () => {
-    if (isBookmarksPage) {
-      return (
-        <Container>
-          {folders.map((folder) => (
-            <div key={folder.id} className={styles.BookmarkFolder}>
-              <h3 className={styles.FolderTitle}>{folder.name}</h3>
-              <div className={styles.FolderPosts}>
-                {posts.results
-                  .filter((post) => post.bookmark_id && post.folder === folder.id)
-                  .map((post) => (
-                    <Post key={post.id} {...post} setPosts={setPosts} />
-                  ))}
-              </div>
-            </div>
-          ))}
-        </Container>
-      );
-    }
-
-    return (
-      <InfiniteScroll
-        children={posts.results.map((post) => (
-          <Post key={post.id} {...post} setPosts={setPosts} />
-        ))}
-        dataLength={posts.results.length}
-        loader={<Asset spinner />}
-        hasMore={!!posts.next}
-        next={() => fetchMoreData(posts, setPosts)}
-      />
-    );
-  };
+  }, [filter, query, pathname, currentUser]);
 
   return (
     <Row className="h-100">
@@ -141,7 +91,15 @@ function PostsPage({ message, filter = "" }) {
         {hasLoaded ? (
           <>
             {posts.results.length ? (
-              renderPosts()
+              <InfiniteScroll
+                children={posts.results.map((post) => (
+                  <Post key={post.id} {...post} setPosts={setPosts} />
+                ))}
+                dataLength={posts.results.length}
+                loader={<Asset spinner />}
+                hasMore={!!posts.next}
+                next={() => fetchMoreData(posts, setPosts)}
+              />
             ) : (
               <Container className={appStyles.Content}>
                 <Asset src={NoResults} message={message} />
