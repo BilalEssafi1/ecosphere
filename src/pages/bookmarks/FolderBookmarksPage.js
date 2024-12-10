@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import styles from "../../styles/FolderBookmarksPage.module.css";
 
 const FolderBookmarksPage = ({ match }) => {
-  const { folder_id } = useParams;
+  const { folder_id } = useParams();
   const [bookmarks, setBookmarks] = useState({ results: [] });
   const [hasLoaded, setHasLoaded] = useState(false);
 
