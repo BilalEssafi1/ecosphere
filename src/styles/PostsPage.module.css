@@ -41,3 +41,80 @@
     margin-bottom: 20px;
     overflow: hidden;
   }
+
+  /* PostsPage Styling */
+.PostsPage {
+  background-color: #f5f6fa;
+  padding: 20px;
+  border-radius: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* SearchBar Styling */
+.SearchBar input {
+  border-radius: 20px;
+  color: #242a3d;
+  padding-left: 40px;
+  margin-bottom: 16px;
+  border: 1px solid #dadadf;
+}
+
+.SearchIcon {
+  position: absolute;
+  font-size: 1.2rem;
+  padding: 9px;
+  padding-left: 15px;
+  color: #6c757d;
+}
+
+.SearchIcon:hover {
+  cursor: default;
+  color: #cfced3;
+}
+
+/* Posts Styling */
+.PostList {
+  margin-top: 20px;
+}
+
+.PostItem {
+  border-radius: 20px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+/* Bookmark Folder Styling */
+.BookmarkFolder {
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.FolderTitle {
+  color: #4caf50;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e9f6f0;
+}
+
+.FolderPosts {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Empty Folder Message */
+.EmptyFolder {
+  color: #6c757d;
+  text-align: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 15px;
+  margin-top: 10px;
+}
