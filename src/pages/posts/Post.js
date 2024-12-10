@@ -6,6 +6,7 @@ import { Link, useHistory } from "react-router-dom";
 import Avatar from "../../components/Avatar";
 import { axiosRes } from "../../api/axiosDefaults";
 import { MoreDropdown } from "../../components/MoreDropdown";
+import BookmarkButton from "../../components/BookmarkButton";
 
 const Post = (props) => {
   // Destructure all props
@@ -118,6 +119,7 @@ const Post = (props) => {
         )}
 
         <div className={styles.PostBar}>
+          {/* Like functionality */}
           {is_owner ? (
             <OverlayTrigger
               placement="top"
@@ -146,6 +148,8 @@ const Post = (props) => {
             <i className="far fa-comments" />
           </Link>
           {comments_count}
+          {/* Add BookmarkButton here */}
+          <BookmarkButton post={{ id, is_bookmarked: false }} currentUser={currentUser} />
         </div>
       </Card.Body>
     </Card>

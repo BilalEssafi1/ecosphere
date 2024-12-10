@@ -24,6 +24,7 @@ function App() {
       <NavBar />
       <Container className={styles.Main}>
         <Switch>
+          {/* Home page route */}
           <Route
             exact
             path="/"
@@ -31,6 +32,8 @@ function App() {
               <PostsPage message="No results found. Adjust the search keyword." />
             )}
           />
+
+          {/* Feed route - shows posts from followed users */}
           <Route
             exact
             path="/feed"
@@ -41,6 +44,8 @@ function App() {
               />
             )}
           />
+
+          {/* Liked posts route */}
           <Route
             exact
             path="/liked"
@@ -51,11 +56,29 @@ function App() {
               />
             )}
           />
+
+          {/* Bookmarked posts route */}
+          <Route
+            exact
+            path="/bookmarks"
+            render={() => (
+              <PostsPage
+                message="No bookmarked posts yet."
+                filter={`bookmarks__owner__profile=${profile_id}&ordering=-bookmarks__created_at&`}
+              />
+            )}
+          />
+
+          {/* Authentication routes */}
           <Route exact path="/signin" render={() => <SignInForm />} />
           <Route exact path="/signup" render={() => <SignUpForm />} />
+
+          {/* Post management routes */}
           <Route exact path="/posts/create" render={() => <PostCreateForm />} />
           <Route exact path="/posts/:id" render={() => <PostPage />} />
           <Route exact path="/posts/:id/edit" render={() => <PostEditForm />} />
+
+          {/* Profile management routes */}
           <Route exact path="/profiles/:id" render={() => <ProfilePage />} />
           <Route
             exact
@@ -73,6 +96,7 @@ function App() {
             render={() => <ProfileEditForm />}
           />
 
+          {/* 404 route */}
           <Route render={() => <p>Page not found!</p>} />
         </Switch>
       </Container>

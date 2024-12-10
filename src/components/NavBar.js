@@ -13,14 +13,20 @@ import useClickOutsideToggle from "../hooks/useClickOutsideToggle";
 import { removeTokenTimestamp } from "../utils/utils";
 
 const NavBar = () => {
+  // Get current user and setter from context
   const currentUser = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
 
+  // Custom hook for handling navbar toggle on mobile
   const { expanded, setExpanded, ref } = useClickOutsideToggle();
 
+  /**
+   * Handles user sign out
+   * Clears tokens, cookies, and user data
+   */
   const handleSignOut = async () => {
     try {
-      // Get CSRF token
+      // Get CSRF token from cookies
       const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrftoken='))
@@ -44,11 +50,11 @@ const NavBar = () => {
       setCurrentUser(null);
       removeTokenTimestamp();
       
-      // Clear any stored tokens
+      // Clear stored tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       
-      // Optional: Clear all cookies
+      // Clear all cookies
       document.cookie.split(';').forEach(cookie => {
         document.cookie = cookie
           .replace(/^ +/, '')
@@ -60,6 +66,7 @@ const NavBar = () => {
     }
   };
 
+  // Add post icon - shows only when user is logged in
   const addPostIcon = (
     <NavLink
       className={styles.NavLink}
@@ -69,6 +76,8 @@ const NavBar = () => {
       <i className="far fa-plus-square"></i>Add post
     </NavLink>
   );
+
+  // Icons shown when user is logged in
   const loggedInIcons = (
     <>
       <NavLink
@@ -85,6 +94,14 @@ const NavBar = () => {
       >
         <i className="fas fa-heart"></i>Liked
       </NavLink>
+      {/* Add Bookmarks NavLink */}
+      <NavLink
+        className={styles.NavLink}
+        activeClassName={styles.Active}
+        to="/bookmarks"
+      >
+        <i className="fas fa-bookmark"></i>Bookmarks
+      </NavLink>
       <NavLink className={styles.NavLink} to="/" onClick={handleSignOut}>
         <i className="fas fa-sign-out-alt"></i>Sign out
       </NavLink>
@@ -96,6 +113,8 @@ const NavBar = () => {
       </NavLink>
     </>
   );
+
+  // Icons shown when user is logged out
   const loggedOutIcons = (
     <>
       <NavLink

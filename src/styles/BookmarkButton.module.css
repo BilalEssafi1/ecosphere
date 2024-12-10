@@ -1,0 +1,89 @@
+/* Styles for the bookmark icon */
+.BookmarkIcon {
+    color: #8bc34a;
+    font-size: 1.6rem;
+    padding: 7px;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: color ease-in-out 0.3s;
+  }
+  
+  /* Hover effect for bookmark icon */
+  .BookmarkIcon:hover {
+    color: #388e3c;
+  }
+  
+  /* Style for active/bookmarked state */
+  .Bookmarked {
+    color: #4caf50;
+  }
+  
+  /* Container for new folder creation form */
+  .CreateFolder {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    font-family: "Poppins", sans-serif;
+  }
+  
+  /* Input field styling in create folder form */
+  .CreateFolder input {
+    flex-grow: 1;
+    padding: 7px 10px;
+    border: 1px solid #8bc34a;
+    border-radius: 4px;
+    font-family: "Poppins", sans-serif;
+    background-color: #e9f6f0;
+  }
+  
+  .CreateFolder input:focus {
+    outline: none;
+    border-color: #4caf50;
+  }
+  
+  /* Individual folder item in the list */
+  .FolderItem {
+    padding: 10px;
+    border-bottom: 1px solid #8bc34a;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "Poppins", sans-serif;
+    color: #333333;
+  }
+  
+  /* Hover effect for folder items */
+  .FolderItem:hover {
+    background-color: #e9f6f0;
+  }
+  
+  /* Modal customization */
+  :global(.modal-content) {
+    background-color: #e9f6f0;
+    font-family: "Poppins", sans-serif;
+  }
+  
+  :global(.modal-header) {
+    border-bottom: 1px solid #8bc34a;
+  }
+  
+  :global(.btn-primary) {
+    background-color: #4caf50;
+    border-color: #4caf50;
+  }
+  
+  :global(.btn-primary:hover) {
+    background-color: #388e3c;
+    border-color: #388e3c;
+  }
+  
+  :global(.btn-secondary) {
+    background-color: #8bc34a;
+    border-color: #8bc34a;
+  }
+  
+  :global(.btn-secondary:hover) {
+    background-color: #689f38;
+    border-color: #689f38;
+  }

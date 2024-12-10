@@ -1,4 +1,4 @@
-# Welcome to Dar Tangier
+# Welcome to Ecosphere
 
 [View the live project here](https://ecosphere-social-8d56a42d0db7.herokuapp.com/)
 
@@ -37,29 +37,37 @@ After refining the project and finalizing essential features, I created the data
 ## Wireframes
 
 ### Large and medium screens
-![Screenshot wireframe homepage large screen]()
+![Screenshot wireframe homepage large screen](src/assets/homepage.png)
 
-![Screenshot wireframe menu page large screen]()
+![Screenshot wireframe sign up page large screen](src/assets/signup.png)
 
-![Screenshot wireframe manage-reservation add post large screen]()
+![Screenshot wireframe sign in page large screen](src/assets/signin.png)
 
-![Screenshot wireframe profile page large screen]()
+![Screenshot wireframe add post page large screen](src/assets/add-post.png)
+
+![Screenshot wireframe profile page large screen](src/assets/user-profile.png)
 
 
 ### Small screens
 
-![Screenshot wireframe homepage small screen]()
+![Screenshot wireframe small screen](src/assets/homepage-mobile.png)
 
-![Screenshot wireframe menu page small screen]()
+![Screenshot wireframe sign up page small screen](src/assets/signup-mobile.png)
 
-![Screenshot wireframe manage-reservation add post small screen]()
+![Screenshot wireframe sign in page small screen](src/assets/sign-in-mobile.png)
 
-![Screenshot wireframe profile page small screen]()
+![Screenshot wireframe add post page small screen](src/assets/add-post-mobile.png)
+
+![Screenshot wireframe profile page small screen](src/assets/user-profile-mobile.png)
 
 
 # Agile Development
 ## Overview
+This project followed Agile methodology with iterative development cycles, feature prioritization, and task tracking. Development tasks were organized and tracked with GitHub Projects, which ensured the timely delivery of essential functionalities. Each sprint was dedicated to the development and refinement of specific feature sets, including the homepage design, post creation, user profiles, and community engagement.
 
+I initiated this project with a clear intent to streamline workflow and effectively manage the expected workload. After outlining the major epics, I systematically decomposed them into actionable user stories and smaller tasks. This approach not only enhanced my ability to monitor progress but also served as a motivational framework to complete the project on schedule. In addition to the user stories, I created distinct issues for each module of the README.md file, further clarifying objectives and ensuring all components were addressed.
+
+For a comprehensive overview of the project's progress and workflow, please refer to this Kanban page
 
 ## User Stories
 
@@ -109,6 +117,22 @@ After refining the project and finalizing essential features, I created the data
 # Bugs
 
 ## Solved Bugs
+- The image upload functionality was storing files locally instead of uploading them to Cloudinary because of incomplete storage configuration. Images were being saved with local URLs (e.g., "http://8000-bilalessafi1-drfapi-3ety8hg1ccw.ws.codeinstitute-ide.net/media/posts/") rather than being uploaded to Cloudinary's cloud storage. To resolve this, I added explicit MediaCloudinaryStorage to the Post model's image field and verified proper initialization of Cloudinary settings. The solution ensures images are now properly uploaded to Cloudinary and served via their CDN URLs.
+
+- The dropdown menu and profile image were being hidden behind other elements on the page due to positioning and z-index and overflow issues. The dropdown and image components were not being properly layered above other content, causing them to be clipped or not displayed. To resolve this, I applied the following fixes:
+I ensured the parent container of the dropdown and profile image had position: relative; to establish a positioning context.
+I adjusted the z-index values of the dropdown and profile image to ensure they appear above other elements, particularly the background and parent containers.
+I set overflow: visible; on the parent containers to prevent clipping of child elements.
+These changes ensure that dropdown menus, profile images, and other modals are correctly displayed above the background and other elements, improving visibility and user interaction.
+
+- The default avatar image for new users was not showing correctly, and instead, an incorrect image URL was being generated. This occurred because the MEDIA_URL and MEDIA_ROOT settings, which are used for local file storage, were conflicting with Cloudinary’s storage system.
+To fix this:
+I removed the MEDIA_URL and MEDIA_ROOT settings from settings.py to avoid any conflict with Cloudinary.
+I ensured that the DEFAULT_FILE_STORAGE setting was configured to use cloudinary_storage.storage.MediaCloudinaryStorage, which properly handles Cloudinary image URLs.
+This resolved the issue, and now new users see the correct default avatar image from Cloudinary.
+
+- The login functionality failed due to CSRF token and authentication issues across different browsers. The solution involved updating several components: adding proper token refresh logic in useRedirect.js, implementing CSRF handling in SignInForm, and updating axiosDefaults.js with improved request interceptors. We also added proper error logging and token storage management. Browser caching caused persistent issues in previously used browsers, which were resolved by clearing cached data, cookies, and local storage. The solution ensures consistent authentication behavior across all browsers and sessions.
+The PostsPage component failed to display posts after login due to redundant token validation causing authentication errors. The issue stemmed from explicit token checking in the component while the axiosReq instance was already handling authentication through interceptors. The solution involved simplifying the PostsPage component by removing manual token validation and relying on the existing axios interceptors for authentication. We also added the currentUser to the dependency array to ensure the component responds to authentication state changes. These changes allowed the component to properly utilize the authentication system already in place, resolving the "No valid authentication token" error and successfully displaying posts after login.
 
 
 # Deployment
