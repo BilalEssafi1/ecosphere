@@ -27,7 +27,7 @@ function PostsPage({ message, filter = "" }) {
   const [query, setQuery] = useState("");
   const currentUser = useCurrentUser();
 
-  // Add state for bookmark folders and check if on bookmarks page
+  // Add state for bookmark folders
   const [folders, setFolders] = useState([]);
   const isBookmarksPage = pathname === "/bookmarks";
 
@@ -35,44 +35,28 @@ function PostsPage({ message, filter = "" }) {
     const controller = new AbortController();
 
     /**
-     * Fetches bookmark folders for the current user
-     * Only called when on the bookmarks page
-     */
-    const fetchFolders = async () => {
-      try {
-        const { data } = await axiosReq.get("/folders/");
-        setFolders(data.results);
-      } catch (err) {
-        console.log("Fetch folders error:", err);
-      }
-    };
-
-    /**
      * Fetches posts from the API with authentication
      * Handles token refresh if needed
      */
     const fetchPosts = async () => {
       try {
-        // Only add auth header if we're on a protected route
-        const config = {
-          signal: controller.signal,
-        };
-
-        if (isBookmarksPage) {
-          const token = localStorage.getItem("access_token");
-          config.headers = { Authorization: `Bearer ${token}` };
-        }
-
         const { data } = await axiosReq.get(
           `/posts/?${filter}search=${query}`,
-          config
+          { 
+            signal: controller.signal,
+          }
         );
         setPosts(data);
         setHasLoaded(true);
 
-        // Fetch folders if on bookmarks page
-        if (isBookmarksPage) {
-          await fetchFolders();
+        // If on bookmarks page, fetch folders
+        if (isBookmarksPage && currentUser) {
+          try {
+            const { data: folderData } = await axiosReq.get("/folders/");
+            setFolders(folderData.results);
+          } catch (err) {
+            console.log("Fetch folders error:", err);
+          }
         }
       } catch (err) {
         if (!controller.signal.aborted) {
