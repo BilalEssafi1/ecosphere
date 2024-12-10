@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { axiosReq } from "../api/axiosDefaults";
+import { axiosReq } from "../../api/axiosDefaults";
 import Asset from "../../components/Asset";
 import styles from "../../styles/FolderBookmarksPage.module.css";
 
