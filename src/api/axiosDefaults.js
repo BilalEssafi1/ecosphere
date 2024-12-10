@@ -31,7 +31,7 @@ axiosReq.interceptors.request.use(
 /**
  * Response interceptor for axiosRes
  * Handles refreshing tokens if access token has expired
- * Includes improved error handling and debugging
+ * Includes retry logic, improved error handling, and debugging
  */
 axiosRes.interceptors.response.use(
   (response) => response,
@@ -42,35 +42,36 @@ axiosRes.interceptors.response.use(
     console.log('Response Error Status:', error.response?.status);
     console.log('Original Request:', originalRequest);
 
-    // Check if the error is due to an expired access token
+    // Check if the error is due to an expired access token (401 error)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      try {
-        // Attempt to refresh the token
-        const { data } = await axios.post("/dj-rest-auth/token/refresh/");
-        
-        // Debug logging for successful token refresh
-        console.log('Token refresh successful:', data);
-        
-        // Save the new access token
-        localStorage.setItem("access_token", data.access);
+      let retryCount = 0;
 
-        // Update the Authorization header and retry the failed request
-        originalRequest.headers["Authorization"] = `Bearer ${data.access}`;
-        return axiosRes(originalRequest);
-      } catch (refreshError) {
-        // Debug logging for refresh errors
-        console.log('Token refresh failed:', refreshError);
-        
-        // Only clear tokens and redirect if refresh actually failed with 401
-        if (refreshError.response?.status === 401) {
-          // Clear tokens if refresh fails
-          localStorage.removeItem("access_token");
+      // Retry the token refresh (up to 3 times)
+      while (retryCount < 3) {
+        try {
+          const { data } = await axios.post("/dj-rest-auth/token/refresh/");
           
-          // Redirect to login page
-          window.location.href = "/signin";
+          // Debug logging for successful token refresh
+          console.log('Token refresh successful:', data);
+
+          // Save the new access token
+          localStorage.setItem("access_token", data.access);
+
+          // Update the Authorization header and retry the failed request
+          originalRequest.headers["Authorization"] = `Bearer ${data.access}`;
+          return axiosRes(originalRequest);
+        } catch (refreshError) {
+          retryCount++;
+          console.log(`Token refresh attempt ${retryCount} failed:`, refreshError);
+
+          if (retryCount === 3) {
+            // If token refresh fails after 3 attempts, log out the user
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");  // Clear both tokens
+            window.location.href = "/signin";  // Redirect to login page
+          }
         }
-        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);

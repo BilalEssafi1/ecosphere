@@ -14,6 +14,8 @@ import ProfilePage from "./pages/profiles/ProfilePage";
 import UsernameForm from "./pages/profiles/UsernameForm";
 import UserPasswordForm from "./pages/profiles/UserPasswordForm";
 import ProfileEditForm from "./pages/profiles/ProfileEditForm";
+import BookmarksPage from "./pages/BookmarksPage";
+import FolderBookmarksPage from "./pages/FolderBookmarksPage";
 
 function App() {
   const currentUser = useCurrentUser();
@@ -63,10 +65,20 @@ function App() {
             path="/bookmarks"
             render={() => (
               currentUser ? (
-                <PostsPage
-                  message="No bookmarked posts yet."
-                  filter={`bookmarks__owner__profile=${profile_id}&ordering=-bookmarks__created_at&`}
-                />
+                <BookmarksPage message="No folders found. Create a folder to start bookmarking posts." />
+              ) : (
+                <Redirect to="/signin" />
+              )
+            )}
+          />
+
+          {/* Specific folder's bookmarks */}
+          <Route
+            exact
+            path="/folders/:folder_id"
+            render={() => (
+              currentUser ? (
+                <FolderBookmarksPage />
               ) : (
                 <Redirect to="/signin" />
               )

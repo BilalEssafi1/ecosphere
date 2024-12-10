@@ -137,6 +137,7 @@ This resolved the issue, and now new users see the correct default avatar image 
 - The login functionality failed due to CSRF token and authentication issues across different browsers. The solution involved updating several components: adding proper token refresh logic in useRedirect.js, implementing CSRF handling in SignInForm, and updating axiosDefaults.js with improved request interceptors. We also added proper error logging and token storage management. Browser caching caused persistent issues in previously used browsers, which were resolved by clearing cached data, cookies, and local storage. The solution ensures consistent authentication behavior across all browsers and sessions.
 The PostsPage component failed to display posts after login due to redundant token validation causing authentication errors. The issue stemmed from explicit token checking in the component while the axiosReq instance was already handling authentication through interceptors. The solution involved simplifying the PostsPage component by removing manual token validation and relying on the existing axios interceptors for authentication. We also added the currentUser to the dependency array to ensure the component responds to authentication state changes. These changes allowed the component to properly utilize the authentication system already in place, resolving the "No valid authentication token" error and successfully displaying posts after login.
 
+## Known Bugs
 
 # Deployment
 
