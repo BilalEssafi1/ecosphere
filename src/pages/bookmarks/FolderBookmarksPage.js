@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { axiosReq } from "../../api/axiosDefaults";
 import Asset from "../../components/Asset";
+import { useParams } from "react-router-dom";
 import styles from "../../styles/FolderBookmarksPage.module.css";
 
 const FolderBookmarksPage = ({ match }) => {
+  const { folder_id } = useParams;
   const [bookmarks, setBookmarks] = useState({ results: [] });
   const [hasLoaded, setHasLoaded] = useState(false);
-
-  const { folder_id } = match.params;
 
   /**
    * Fetch bookmarks for the specified folder.
