@@ -4,7 +4,7 @@ import Asset from "../../components/Asset";
 import { useParams } from "react-router-dom";
 import styles from "../../styles/FolderBookmarksPage.module.css";
 
-const FolderBookmarksPage = ({ match }) => {
+const FolderBookmarksPage = () => {
   const { folder_id } = useParams();
   const [bookmarks, setBookmarks] = useState({ results: [] });
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -33,7 +33,30 @@ const FolderBookmarksPage = ({ match }) => {
         bookmarks.length ? (
           bookmarks.map((bookmark) => (
             <div key={bookmark.id} className={styles.BookmarkItem}>
-              <p>{bookmark.post_title}</p>
+              <h3>{bookmark.post_title}</h3>
+              
+              {/* Render the post image if available */}
+              {bookmark.post_image && (
+                <img
+                  src={bookmark.post_image}
+                  alt={bookmark.post_title}
+                  className={styles.PostImage}
+                />
+              )}
+
+              {/* Render the hashtags if available */}
+              {bookmark.hashtags && bookmark.hashtags.length > 0 && (
+                <div className={styles.Hashtags}>
+                  {bookmark.hashtags.map((hashtag, index) => (
+                    <span key={index} className={styles.Hashtag}>
+                      {hashtag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Optionally, render additional post content like post text */}
+              {bookmark.post_text && <p>{bookmark.post_text}</p>}
             </div>
           ))
         ) : (
