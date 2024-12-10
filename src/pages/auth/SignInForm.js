@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Cookies from "js-cookie";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
@@ -19,6 +20,7 @@ import { setTokenTimestamp } from "../../utils/utils";
 /**
  * SignInForm Component
  * Handles user authentication and login process
+ * Includes error handling, token management, and CSRF protection
  */
 function SignInForm() {
   const setCurrentUser = useSetCurrentUser();
@@ -33,22 +35,38 @@ function SignInForm() {
   const [errors, setErrors] = useState({});
 
   /**
+   * Effect to handle CSRF token setup
+   * Clears old token and fetches new one on component mount
+   */
+  useEffect(() => {
+    // Clear old CSRF token and fetch new one
+    Cookies.remove('csrftoken');
+    axios.get('/dj-rest-auth/user/', { withCredentials: true })
+      .catch(() => {
+        // Ignoring error as 401 is expected for non-authenticated users
+        console.log("Setting up new CSRF token");
+      });
+  }, []);
+
+  /**
    * Handles form submission for user login
-   * Manages JWT token storage and user authentication
+   * Includes CSRF token and authentication token management
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
+      // Make login request with CSRF token
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
+        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
+          "X-CSRFToken": Cookies.get('csrftoken'),
         },
       });
 
-      // Store tokens and set default authorization header
+      // Handle successful login
       if (data.access) {
         localStorage.setItem("access_token", data.access);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
       }
       if (data.refresh) {
         localStorage.setItem("refresh_token", data.refresh);
@@ -58,6 +76,7 @@ function SignInForm() {
       setCurrentUser(data.user);
       setTokenTimestamp(data);
       history.push("/");
+      
     } catch (err) {
       console.log("Login error:", err.response?.data);
       setErrors(err.response?.data || {
