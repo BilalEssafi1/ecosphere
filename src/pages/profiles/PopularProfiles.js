@@ -5,7 +5,12 @@ import Asset from "../../components/Asset";
 import { useProfileData } from "../../contexts/ProfileDataContext";
 import Profile from "./Profile";
 
+/**
+ * Displays a list of the most followed profiles.
+ * Supports a mobile layout and a default desktop layout.
+ */
 const PopularProfiles = ({ mobile }) => {
+  // Get the popular profiles data from context
   const { popularProfiles } = useProfileData();
 
   return (
@@ -15,7 +20,9 @@ const PopularProfiles = ({ mobile }) => {
       }`}
     >
       {popularProfiles.results.length ? (
+        // Check if there are popular profiles to display
         <>
+        {/* Heading for the popular profiles section */}
           <p>Most followed profiles.</p>
           {mobile ? (
             <div className="d-flex justify-content-around">

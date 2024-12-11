@@ -11,19 +11,26 @@ import { useCurrentUser } from "../../contexts/CurrentUserContext";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 
+/**
+ * UserPasswordForm component allows a user to change their password.
+ * It validates that the user is changing the password for their own account.
+ */
 const UserPasswordForm = () => {
   const history = useHistory();
   const { id } = useParams();
   const currentUser = useCurrentUser();
 
+  // State to store the password fields and manage changes
   const [userData, setUserData] = useState({
     new_password1: "",
     new_password2: "",
   });
   const { new_password1, new_password2 } = userData;
 
+  // State to store errors returned from the API (e.g., validation errors)
   const [errors, setErrors] = useState({});
 
+  // Handle changes to the password fields
   const handleChange = (event) => {
     setUserData({
       ...userData,
@@ -31,19 +38,20 @@ const UserPasswordForm = () => {
     });
   };
 
+  // useEffect to ensure the user can only change their own password
   useEffect(() => {
     if (currentUser?.profile_id?.toString() !== id) {
       history.push("/");
     }
   }, [currentUser, history, id]);
 
+  // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
       await axiosRes.post("/dj-rest-auth/password/change/", userData);
       history.goBack();
     } catch (err) {
-      console.log(err);
       setErrors(err.response?.data);
     }
   };

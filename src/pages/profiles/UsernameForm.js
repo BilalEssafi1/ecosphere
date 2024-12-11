@@ -14,6 +14,10 @@ import {
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 
+/**
+ * UsernameForm component allows the user to change their username.
+ * It only allows the user to change their own username based on the profile ID.
+ */
 const UsernameForm = () => {
   const [username, setUsername] = useState("");
   const [errors, setErrors] = useState({});
@@ -24,6 +28,7 @@ const UsernameForm = () => {
   const currentUser = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
 
+  // useEffect to set the username if the current user is the one trying to change their username
   useEffect(() => {
     if (currentUser?.profile_id?.toString() === id) {
       setUsername(currentUser.username);
@@ -32,6 +37,7 @@ const UsernameForm = () => {
     }
   }, [currentUser, history, id]);
 
+  // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
@@ -44,7 +50,6 @@ const UsernameForm = () => {
       }));
       history.goBack();
     } catch (err) {
-      console.log(err);
       setErrors(err.response?.data);
     }
   };

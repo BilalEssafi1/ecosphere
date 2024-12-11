@@ -41,15 +41,11 @@ function PostPage() {
           axiosReq.get(`/posts/${id}`),
           axiosReq.get(`/comments/?post=${id}`),
         ]);
-        // Debug log to check post data structure
-        console.log("Post data:", post);
         // Update state with fetched data, wrapping post in results array
         // This ensures consistency with the expected data structure
         setPost({ results: [post] });
         setComments(comments);
       } catch (err) {
-        // Log any errors that occur during fetch
-        console.log("Error:", err);
         // Store any error responses
         setErrors(err.response?.data || {});
       } finally {

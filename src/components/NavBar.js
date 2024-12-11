@@ -80,7 +80,6 @@ const NavBar = () => {
       window.location.href = '/signin';
       
     } catch (err) {
-      console.log("Logout error:", err);
     }
   };
 

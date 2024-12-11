@@ -16,7 +16,6 @@ import PopularProfiles from "../profiles/PopularProfiles";
 import { useCurrentUser } from "../../contexts/CurrentUserContext";
 
 /**
- * PostsPage Component
  * Displays a list of posts with search, filter, and infinite scroll functionality
  */
 function PostsPage({ message, filter = "" }) {
@@ -47,7 +46,6 @@ function PostsPage({ message, filter = "" }) {
         setHasLoaded(true);
       } catch (err) {
         if (!controller.signal.aborted) {
-          console.log("Fetch posts error:", err);
           setHasLoaded(true); // Set loaded even on error
         }
       }

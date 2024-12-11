@@ -7,6 +7,10 @@ import Avatar from "../../components/Avatar";
 import { Button } from "react-bootstrap";
 import { useSetProfileData } from "../../contexts/ProfileDataContext";
 
+/**
+ * Profile component displays individual profile information with follow/unfollow functionality.
+ * It supports both mobile and desktop layouts.
+ */
 const Profile = (props) => {
   const { profile, mobile, imageSize = 55 } = props;
   const { id, following_id, image, owner } = profile;

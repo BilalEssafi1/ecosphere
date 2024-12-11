@@ -21,6 +21,10 @@ import { fetchMoreData } from "../../utils/utils";
 import NoResults from "../../assets/no-results.png";
 import { ProfileEditDropdown } from "../../components/MoreDropdown";
 
+/**
+ * ProfilePage component displays detailed profile information, including posts, followers, and other profile data.
+ * It supports infinite scrolling for posts and dynamic follow/unfollow functionality.
+ */
 function ProfilePage() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [profilePosts, setProfilePosts] = useState({ results: [] });
@@ -34,6 +38,7 @@ function ProfilePage() {
   const [profile] = pageProfile.results;
   const is_owner = currentUser?.username === profile?.owner;
 
+  // Fetch profile data and posts when the component mounts or profile ID changes
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -49,12 +54,12 @@ function ProfilePage() {
         setProfilePosts(profilePosts);
         setHasLoaded(true);
       } catch (err) {
-        console.log(err);
       }
     };
     fetchData();
   }, [id, setProfileData]);
 
+  // Main section for displaying the profile
   const mainProfile = (
     <>
       {profile?.is_owner && <ProfileEditDropdown id={profile?.id} />}

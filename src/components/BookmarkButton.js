@@ -24,27 +24,14 @@ const BookmarkButton = ({ post, currentUser }) => {
       // Clear any previous errors
       setError("");
 
-      // Log the attempt for debugging
-      console.log('Attempting to create bookmark:', {
-        post: post.id,
-        folder: folderId
-      });
-
       const { data } = await axiosReq.post("/bookmarks/", {
         post: parseInt(post.id),
         folder: parseInt(folderId)
       });
 
-      // Log successful bookmark creation
-      console.log('Bookmark created:', data);
       setIsBookmarked(true);
       setShowModal(false);
     } catch (err) {
-      // Enhanced error logging
-      console.error("Error bookmarking post:", err);
-      console.error("Error response:", err.response?.data);
-      console.error("Status code:", err.response?.status);
-      
       // Set error message for user feedback
       setError(err.response?.data?.detail || "Error saving bookmark. Please try again.");
       
@@ -63,8 +50,6 @@ const BookmarkButton = ({ post, currentUser }) => {
       await axiosReq.delete(`/bookmarks/${post.bookmark_id}/`);
       setIsBookmarked(false);
     } catch (err) {
-      console.error("Error unbookmarking post:", err);
-      console.error("Error response:", err.response?.data);
       alert("Error removing bookmark. Please try again.");
     }
   };

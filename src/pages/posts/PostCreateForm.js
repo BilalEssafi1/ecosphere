@@ -15,22 +15,34 @@ import { useHistory } from "react-router";
 import { axiosReq } from "../../api/axiosDefaults";
 import { useRedirect } from "../../hooks/useRedirect";
 
+/**
+ * Form component for creating new posts.
+ * Includes fields for title, content, image, and hashtags.
+ * Handles validation, image preview, and form submission.
+ */
 function PostCreateForm() {
-  useRedirect("loggedOut");  // Redirect users to login if not authenticated
+  // Redirect users to login page if they are not authenticated
+  useRedirect("loggedOut");
+
+  // State to track errors
   const [errors, setErrors] = useState({});
-  
+
+  // State to manage post data
   const [postData, setPostData] = useState({
     title: "",
     content: "",
     image: "",
-    add_hashtags: "",  // Changed from tags to add_hashtags to match API
+    add_hashtags: "",
   });
   const { title, content, image, add_hashtags } = postData;
 
-  const imageInput = useRef(null);  // Ref to access the image input field
+  // Ref to access the image input field
+  const imageInput = useRef(null);
   const history = useHistory();
 
-  // Handle changes to form fields like title and content
+  /**
+   * Handle changes to text fields (e.g., title, content, hashtags).
+   */
   const handleChange = (event) => {
     setPostData({
       ...postData,
@@ -38,56 +50,61 @@ function PostCreateForm() {
     });
   };
 
-  // Handle changes to the image input
+  /**
+   * Handle changes to the image input and update the preview image.
+   */
   const handleChangeImage = (event) => {
     if (event.target.files.length) {
-      URL.revokeObjectURL(image);  // Revoke any previously created URLs to avoid memory leaks
+      URL.revokeObjectURL(image);
       setPostData({
         ...postData,
-        image: URL.createObjectURL(event.target.files[0]),  // Set new image URL for preview
+        image: URL.createObjectURL(event.target.files[0]),
       });
     }
   };
 
-  // Handle form submission
+  /**
+   * Handle form submission for creating a new post.
+   */
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Check if content is empty
+    // Validate that content is not empty
     if (!content) {
       setErrors((prevErrors) => ({
         ...prevErrors,
-        content: ["Content is required."]
+        content: ["Content is required."],
       }));
       return;
     }
 
+    // Prepare form data for submission
     const formData = new FormData();
-
-    formData.append("title", title);  // Append title to form data
-    formData.append("content", content);  // Append content to form data
+    formData.append("title", title);
+    formData.append("content", content);
     if (imageInput?.current?.files[0]) {
-      formData.append("image", imageInput.current.files[0]);  // Append image to form data
+      formData.append("image", imageInput.current.files[0]);
     }
-    formData.append("add_hashtags", add_hashtags);  // Changed to add_hashtags
+    formData.append("add_hashtags", add_hashtags);
 
     try {
-      // Include authorization token in the request
+      // Submit the form data to the API
       const { data } = await axiosReq.post("/posts/", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`
-        }
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
       });
-      history.push(`/posts/${data.id}`);  // Redirect to the newly created post
+      // Redirect to the newly created post
+      history.push(`/posts/${data.id}`);
     } catch (err) {
-      console.log("Post creation error:", err);
       if (err.response?.status !== 401) {
-        setErrors(err.response?.data);  // Set errors if the request fails
+        setErrors(err.response?.data);
       }
     }
   };
 
+  // Text fields for post title, content, and hashtags
   const textFields = (
     <div className="text-center">
       {/* Title field */}
@@ -98,12 +115,12 @@ function PostCreateForm() {
           name="title"
           value={title}
           onChange={handleChange}
-          required  // Make title field mandatory
+          required
         />
       </Form.Group>
       {errors?.title?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
-          {message}  {/* Display error messages for title field */}
+          {message} {/* Display error messages for the title field */}
         </Alert>
       ))}
 
@@ -116,12 +133,12 @@ function PostCreateForm() {
           name="content"
           value={content}
           onChange={handleChange}
-          required  // Make content field mandatory
+          required // Make the content field mandatory
         />
       </Form.Group>
       {errors?.content?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
-          {message}  {/* Display error messages for content field */}
+          {message} {/* Display error messages for the content field */}
         </Alert>
       ))}
 
@@ -141,7 +158,7 @@ function PostCreateForm() {
       </Form.Group>
       {errors?.add_hashtags?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
-          {message}  {/* Display error messages for hashtags field */}
+          {message} {/* Display error messages for the hashtags field */}
         </Alert>
       ))}
 
@@ -161,6 +178,7 @@ function PostCreateForm() {
   return (
     <Form onSubmit={handleSubmit}>
       <Row>
+        {/* Left column for the image input and preview */}
         <Col className="py-2 p-0 p-md-2" md={7} lg={8}>
           <Container
             className={`${appStyles.Content} ${styles.Container} d-flex flex-column justify-content-center`}
@@ -168,6 +186,7 @@ function PostCreateForm() {
             <Form.Group className="text-center">
               {image ? (
                 <>
+                  {/* Display the selected image preview */}
                   <figure>
                     <Image className={appStyles.Image} src={image} rounded />
                   </figure>
@@ -192,6 +211,7 @@ function PostCreateForm() {
                 </Form.Label>
               )}
 
+              {/* Image upload input field */}
               <Form.File
                 id="image-upload"
                 accept="image/*"
@@ -205,9 +225,12 @@ function PostCreateForm() {
               </Alert>
             ))}
 
+            {/* Render text fields on smaller screens */}
             <div className="d-md-none">{textFields}</div>
           </Container>
         </Col>
+
+        {/* Right column for text fields (only visible on larger screens) */}
         <Col md={5} lg={4} className="d-none d-md-block p-0 p-md-2">
           <Container className={appStyles.Content}>{textFields}</Container>
         </Col>

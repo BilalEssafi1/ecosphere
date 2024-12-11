@@ -46,13 +46,10 @@ function PostEditForm() {
 
         // Check if the current user is the owner of the post
         if (is_owner) {
-          // If so, populate the state with the post data
-          // Convert tags array to comma-separated string for editing
           setPostData({ 
             title, 
             content, 
             image,
-            // Join tags with commas and handle case where tags might be null
             add_hashtags: tags ? tags.join(", ") : "" 
           });
         } else {
@@ -60,35 +57,34 @@ function PostEditForm() {
           history.push("/");
         }
       } catch (err) {
-        console.log(err);
       }
     };
 
     handleMount();
-  }, [history, id]); // Re-run this effect if the post ID or history changes
+  }, [history, id]);
 
   // Handle changes in form input fields (title, content, hashtags)
   const handleChange = (event) => {
     setPostData({
       ...postData,
-      [event.target.name]: event.target.value,  // Update the specific field in state
+      [event.target.name]: event.target.value,
     });
   };
 
   // Handle image file changes and create a URL for preview
   const handleChangeImage = (event) => {
     if (event.target.files.length) {
-      URL.revokeObjectURL(image);  // Revoke the previous image URL to prevent memory leaks
+      URL.revokeObjectURL(image);
       setPostData({
         ...postData,
-        image: URL.createObjectURL(event.target.files[0]),  // Create a new object URL for the selected image
+        image: URL.createObjectURL(event.target.files[0]),
       });
     }
   };
 
   // Handle form submission (saving the post)
   const handleSubmit = async (event) => {
-    event.preventDefault();  // Prevent the default form submit behavior
+    event.preventDefault();
 
     const formData = new FormData();
 
@@ -115,8 +111,6 @@ function PostEditForm() {
       // Redirect to the updated post page after successful submission
       history.push(`/posts/${id}`);
     } catch (err) {
-      console.log(err);
-      // If an error occurs, display the error messages
       if (err.response?.status !== 401) {
         setErrors(err.response?.data);
       }
@@ -133,7 +127,7 @@ function PostEditForm() {
           type="text"
           name="title"
           value={title}
-          onChange={handleChange}  // Update state when the user changes the title
+          onChange={handleChange}
         />
       </Form.Group>
       {/* Display errors related to the title field */}
@@ -151,7 +145,7 @@ function PostEditForm() {
           rows={6}
           name="content"
           value={content}
-          onChange={handleChange}  // Update state when the user changes the content
+          onChange={handleChange}
         />
       </Form.Group>
       {/* Display errors related to the content field */}
@@ -168,7 +162,7 @@ function PostEditForm() {
           type="text"
           name="add_hashtags"
           value={add_hashtags}
-          onChange={handleChange}  // Update state when the user changes the hashtags
+          onChange={handleChange}
           placeholder="E.g., nature, travel, food"
         />
         <Form.Text className="text-muted">
@@ -185,7 +179,7 @@ function PostEditForm() {
       {/* Cancel and Save buttons */}
       <Button
         className={`${btnStyles.Button} ${btnStyles.Blue}`}
-        onClick={() => history.goBack()}  // Go back to the previous page when cancel is clicked
+        onClick={() => history.goBack()}
       >
         cancel
       </Button>
@@ -221,7 +215,7 @@ function PostEditForm() {
               <Form.File
                 id="image-upload"
                 accept="image/*"
-                onChange={handleChangeImage}  // Handle the image change
+                onChange={handleChangeImage}
                 ref={imageInput}
               />
             </Form.Group>

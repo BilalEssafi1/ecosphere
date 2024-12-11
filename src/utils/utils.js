@@ -55,7 +55,6 @@ export const unfollowHelper = (profile, clickedProfile) => {
 
 /**
  * Sets the timestamp for token refresh based on JWT expiration
- * @param {Object} data - Response data containing tokens
  */
 export const setTokenTimestamp = (data) => {
   try {
@@ -72,13 +71,11 @@ export const setTokenTimestamp = (data) => {
       localStorage.setItem("refresh_token", data.refresh_token);
     }
   } catch (err) {
-    console.log("Error setting token timestamp:", err);
   }
 };
 
 /**
  * Checks if token should be refreshed based on expiration time
- * @returns {boolean} True if token should be refreshed
  */
 export const shouldRefreshToken = () => {
   const refreshTokenTimestamp = localStorage.getItem("refreshTokenTimestamp");
@@ -99,7 +96,6 @@ export const removeTokenTimestamp = () => {
 
 /**
  * Gets the current access token
- * @returns {string|null} The current access token or null
  */
 export const getAccessToken = () => {
   return localStorage.getItem("access_token");
@@ -107,7 +103,6 @@ export const getAccessToken = () => {
 
 /**
  * Gets the current refresh token
- * @returns {string|null} The current refresh token or null
  */
 export const getRefreshToken = () => {
   return localStorage.getItem("refresh_token");

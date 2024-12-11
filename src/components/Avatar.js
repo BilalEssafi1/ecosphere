@@ -1,7 +1,6 @@
 import React from "react";
 import styles from "../styles/Avatar.module.css";
 
-
 const Avatar = ({ src, height = 50, text }) => {
  return (
    <span>
@@ -16,6 +15,5 @@ const Avatar = ({ src, height = 50, text }) => {
    </span>
  );
 };
-
 
 export default Avatar;
