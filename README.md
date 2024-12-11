@@ -8,25 +8,65 @@ Ecosphere is a social media platform designed to connect users who are passionat
 1. [UX](#ux)
 2. [Agile Development](#agile-development)
 3. [Features Implemented](#features-implemented)
-4. [Technology Used](#technology-used)
-5. [Testing](#testing)
-6. [Bugs](#bugs)
-7. [Deployment](#deployment)
-8. [Credits and Acknowledgements](#credits-and-acknowledgement)
+4. [Reusable Components](#reusable-components)
+5. [Technology Used](#technology-used)
+6. [Testing](#testing)
+7. [Bugs](#bugs)
+8. [Deployment](#deployment)
+9. [Credits and Acknowledgements](#credits-and-acknowledgement)
 
 # UX
 
 ## Goals and Target Audience
 Ecosphere is designed for individuals who are passionate about sustainability and eco-friendly living. The website provides essential features for easy navigation, user engagement, and community building, suitable for individuals, families, and groups looking to connect and share their experiences and knowledge about environmental awareness.
 
-## Design 
+## Design
+
+### Color Scheme & Typography
 The Ecosphere website embraces a color palette inspired by nature, with earthy and inviting tones that reflect the theme of sustainability:
 
-Green and Earthy Tones: Rich shades of green and earthy tones are used as primary colors, evoking the natural warmth and sophistication associated with environmental awareness.
-Accents of Blue and White: These accents are used sparingly to highlight call-to-action buttons, enhancing user navigation while fitting the theme of sustainability and clarity.
-Light and Airy Backgrounds: These tones provide a clean and welcoming background that contrasts beautifully with the deeper colors, ensuring readability and a visually pleasing experience.
+1. Primary Colors:
+   - Forest Green (#2F5233): Rich shades of green are used as primary colors, evoking the natural warmth and sophistication associated with environmental awareness
+   - Earth Brown (#8B4513): Used for content elements and accents, providing warmth and grounding the design
 
-This color scheme not only aligns with the theme of sustainability but also helps create an inviting, elegant atmosphere for users exploring the platform’s offerings and engaging with the community.
+2. Secondary Colors:
+   - Ocean Blue (#4682B4): Used sparingly to highlight call-to-action buttons and interactive elements, enhancing user navigation while fitting the theme of sustainability
+   - Light Sage (#E8F5E9): Provides a clean, welcoming background that contrasts beautifully with the deeper colors
+
+3. Interactive Elements:
+   - Blue (#4682B4): Used for clickable links and buttons
+   - White: Used for text on darker backgrounds and navigation elements
+   - Light gray: Used for subtle backgrounds and hover states
+
+Typography:
+- Primary Font: Poppins
+  - Used consistently throughout the application for a cohesive look
+  - Clean and modern geometric design that enhances readability
+  - Various weights utilized to create visual hierarchy:
+    - Regular weight for body text
+    - Medium/Bold for headings and important elements
+  
+
+This thoughtful combination of colors and typography not only aligns with the theme of sustainability but also helps create an inviting, elegant atmosphere for users exploring the platform's offerings and engaging with the community.
+
+### Layout & Spacing
+The website follows a consistent grid system and spacing hierarchy:
+
+1. Grid Structure:
+   - Uses Bootstrap's 12-column grid system
+   - Maximum container width of 1200px
+   - Responsive breakpoints:
+     - Mobile: < 576px
+     - Tablet: 576px - 992px
+     - Desktop: > 992px
+
+2. Component Layout:
+   - Fixed navbar at the top for consistent navigation
+   - Main content area with responsive padding
+   - Sidebar for popular profiles on larger screens
+   - Mobile-optimized layout with collapsible navigation
+
+This color scheme and layout not only aligns with the theme of sustainability but also helps create an inviting, elegant atmosphere for users exploring the platform's offerings and engaging with the community.
 
 ## Database planning
 
@@ -86,12 +126,49 @@ By prioritizing user needs and following an agile methodology, I aimed to delive
 8. [User Story: Edit Profile](https://github.com/BilalEssafi1/ecosphere/issues/18)
 
 # Technology Used
-- Frontend: HTML, CSS, JavaScript, Bootstrap
+
+## Frontend Libraries
+
+### Core Libraries
+
+1. React Bootstrap (v4.6.0)
+- Purpose: UI component framework
+- Reasoning:
+    - Provides consistent, responsive design patterns
+    - Built-in accessibility features
+    - Familiar Bootstrap class system
+    - Extensive component library reducing development time
+
+2. Axios (v0.21.4)
+- Purpose: HTTP client for API requests
+- Reasoning:
+    - Robust interceptor system for token management
+    - Consistent error handling
+    - Request/response transformation capabilities
+    - Built-in CSRF protection support
+
+3. React Router DOM (v5.3.0)
+- Purpose: Application routing
+- Reasoning:
+    - Declarative routing approach
+    - Built-in navigation guards
+    - History manipulation
+    - Query parameter handling
+
+4. JWT Decode (v3.1.2)
+- Purpose: Token handling
+- Reasoning:
+    - Secure token validation
+    - Payload extraction
+    - Expiration handling
+
+## Rest of the Techstack
 - Backend: Django, Python
 - Database: PostgreSQL (configured for production via DATABASE_URL)
 - Deployment: Deployed on Heroku, with dj_database_url for database handling.
-- Other: Cloudinary API, Font Awesome for icons, and Crispy Forms for Django form styling.
+- Other: Cloudinary API, Font Awesome for icons, and Creately for database visualisation. 
 
+# Features Implemented
 
 ## Homepage
 - Navbar: User-friendly navigation bar is present on all pages and it adapts to the user's authentication status (logged in or not.) Logged-in users have access to Post, like, comment, follow, bookmark and profile features. 
@@ -149,7 +226,34 @@ The website is mobile-friendly and responsive across all devices, optimized with
 - Add bookmark editing functionalities to rename a bookmark or also delete it
 - Add video upload functionality to allow users to upload different types of assets
 
-# Features Implemented
+# Reusable Components
+
+## Navbar Component 
+- Purpose: Primary navigation component for the application
+    - Features:
+        - Responsive design with mobile toggle
+        - Conditional rendering based on authentication status
+        - Avatar integration
+
+## Avatar Component
+- Purpose: Displays user profile images consistently throughout the application
+- Usage: Profile sections, comments, navigation
+
+## BookmarkButton Component
+- Purpose: Handles post bookmarking functionality
+    - Features:
+        - Folder creation/selection modal
+        - Tooltip integration
+        - Error handling
+
+## MoreDropdown Component
+- Purpose: Provides edit/delete functionality for user-owned content
+- Usage: Posts, comments, profile sections
+
+## Asset Component
+- Purpose: Handles loading states and placeholder content
+- Usage: Loading states, empty states
+
 
 # Testing
 
@@ -215,8 +319,8 @@ I removed the MEDIA_URL and MEDIA_ROOT settings from settings.py to avoid any co
 I ensured that the DEFAULT_FILE_STORAGE setting was configured to use cloudinary_storage.storage.MediaCloudinaryStorage, which properly handles Cloudinary image URLs.
 This resolved the issue, and now new users see the correct default avatar image from Cloudinary.
 
-- The login functionality failed due to CSRF token and authentication issues across different browsers. The solution involved updating several components: adding proper token refresh logic in useRedirect.js, implementing CSRF handling in SignInForm, and updating axiosDefaults.js with improved request interceptors. We also added proper error logging and token storage management. Browser caching caused persistent issues in previously used browsers, which were resolved by clearing cached data, cookies, and local storage. The solution ensures consistent authentication behavior across all browsers and sessions.
-The PostsPage component failed to display posts after login due to redundant token validation causing authentication errors. The issue stemmed from explicit token checking in the component while the axiosReq instance was already handling authentication through interceptors. The solution involved simplifying the PostsPage component by removing manual token validation and relying on the existing axios interceptors for authentication. We also added the currentUser to the dependency array to ensure the component responds to authentication state changes. These changes allowed the component to properly utilize the authentication system already in place, resolving the "No valid authentication token" error and successfully displaying posts after login.
+- The login functionality failed due to CSRF token and authentication issues across different browsers. The solution involved updating several components: adding proper token refresh logic in useRedirect.js, implementing CSRF handling in SignInForm, and updating axiosDefaults.js with improved request interceptors. I also added proper error logging and token storage management. Browser caching caused persistent issues in previously used browsers, which were resolved by clearing cached data, cookies, and local storage. The solution ensures consistent authentication behavior across all browsers and sessions.
+The PostsPage component failed to display posts after login due to redundant token validation causing authentication errors. The issue stemmed from explicit token checking in the component while the axiosReq instance was already handling authentication through interceptors. The solution involved simplifying the PostsPage component by removing manual token validation and relying on the existing axios interceptors for authentication. I also added the currentUser to the dependency array to ensure the component responds to authentication state changes. These changes allowed the component to properly utilize the authentication system already in place, resolving the "No valid authentication token" error and successfully displaying posts after login.
 
 ## Known Bugs
 
