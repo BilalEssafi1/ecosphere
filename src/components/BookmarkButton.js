@@ -4,7 +4,11 @@ import styles from "../styles/BookmarkButton.module.css";
 import { axiosReq } from "../api/axiosDefaults";
 import BookmarkFolderModal from "./BookmarkFolderModal";
 
+/**
+ * Handles the bookmarking functionality for posts
+ */
 const BookmarkButton = ({ post, currentUser }) => {
+  // State for modal visibility and bookmark status
   const [showModal, setShowModal] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(post?.is_bookmarked);
 
@@ -14,14 +18,26 @@ const BookmarkButton = ({ post, currentUser }) => {
    */
   const handleBookmark = async (folderId) => {
     try {
-      await axiosReq.post("/bookmarks/", {
+      // Debug logging to track request data
+      console.log('Attempting to create bookmark:', {
+        post: post.id,
+        folder: folderId
+      });
+
+      const { data } = await axiosReq.post("/bookmarks/", {
         post: post.id,
         folder: folderId,
       });
+
+      // Log successful response for debugging
+      console.log('Bookmark created:', data);
       setIsBookmarked(true);
       setShowModal(false);
     } catch (err) {
+      // Enhanced error logging for debugging
       console.error("Error bookmarking post:", err);
+      console.error("Error response:", err.response?.data);
+      console.error("Status code:", err.response?.status);
     }
   };
 
@@ -35,6 +51,7 @@ const BookmarkButton = ({ post, currentUser }) => {
       setIsBookmarked(false);
     } catch (err) {
       console.error("Error unbookmarking post:", err);
+      console.error("Error response:", err.response?.data);
     }
   };
 
