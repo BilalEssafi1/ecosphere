@@ -85,10 +85,13 @@ By prioritizing user needs and following an agile methodology, I aimed to delive
 7. [User Story: Like, Comment and Bookmark Posts](https://github.com/BilalEssafi1/ecosphere/issues/17)
 8. [User Story: Edit Profile](https://github.com/BilalEssafi1/ecosphere/issues/18)
 
+# Technology Used
+- Frontend: HTML, CSS, JavaScript, Bootstrap
+- Backend: Django, Python
+- Database: PostgreSQL (configured for production via DATABASE_URL)
+- Deployment: Deployed on Heroku, with dj_database_url for database handling.
+- Other: Cloudinary API, Font Awesome for icons, and Crispy Forms for Django form styling.
 
-# Features Implemented
-
-# Features Implemented
 
 ## Homepage
 - Navbar: User-friendly navigation bar is present on all pages and it adapts to the user's authentication status (logged in or not.) Logged-in users have access to Post, like, comment, follow, bookmark and profile features. 
@@ -142,7 +145,11 @@ The website is mobile-friendly and responsive across all devices, optimized with
 - Implement advanced token refresh functionality to resolve the need for clearing cache and cookies to log in after signing out, ensuring seamless handling of expired tokens and CSRF synchronization.
 - Add a more custom 404 pages
 - Add self-service forgot password feature via email verification
+- Improve performance on the side by implementing stricter image sizing rules
+- Add bookmark editing functionalities to rename a bookmark or also delete it
+- Add video upload functionality to allow users to upload different types of assets
 
+# Features Implemented
 
 # Testing
 
@@ -160,14 +167,35 @@ The website is mobile-friendly and responsive across all devices, optimized with
     - No significant issues were returned when passing the code through Jshint.
 ![Screenshot javascript testing](src/assets/jshint-validation.png)
 
-- PEP8 Validation: The code was validated using PEP8 style guide without any errors.
-![Screenshot python testing](static/assets/images/readme/pep8-validation.png)
+- PEP8 Validation: The python code of the my developed Django Rest Framework API which you can find [here](https://github.com/BilalEssafi1/drf-api) was validated using PEP8 style guide without any errors.
+![Screenshot python testing](src/assets/pep8-validation-drf-api.png)
 
 - Accessibility
     - I confirmed that the colors and fonts chosen are easy to read and accessible by running it through lighthouse in devtools.
-![Screenshot accessibility testing](static/assets/images/readme/accessibility.png)
+![Screenshot accessibility testing](src/assets/accessibility.png)
 
 ## Manual testing
+
+| Test Case | Action | Expectation | Pass/Fail |
+| --- | --- | --- | --- |
+| Navigation | Tested by clicking nav links and checking that the user ends up on the correct landing page. | User is redirected to the correct landing page. | Pass | 
+| User Registration | This was tested by creating a new user account and confirming that the user was redirected to the sign-in landing page. | The user is automatically redirected to the sign-in interface after successful registration to log in with created user details. | Pass | 
+| User Login | This was tested by logging in with a valid user account and verifying that the user is being redirected to the logged-in interface. | The user is automatically redirected to the logged-in interface after successful login. | Pass | 
+| Admin Panel | This was tested by logging in as an admin and performing CRUD operations on content and users. | The admin is redirected to the admin dashboard after successful login and can view, create, delete users and manage their permissions. | Pass | 
+| Add a Post | This was tested by logging in with a valid user account and clicking on "Add post" to create a new post. | A post form opens when the user clicks on the "Add post" button when logged in that allows them to select a picture for their post, add a title, content, and suitable hashtags to increase findability. | Pass | 
+| Edit a Post | This was tested by logging in with a valid user account and clicking on the user’s owned posts, then clicking on the right-hand corner on the three dots that open the edit selector and editing the post form that opens up. | A post form opens when the user clicks on the edit button, which they can only see on their own posts when logged in, and allows them to edit the picture, title, content, and hashtags. | Pass | 
+| Delete a Post | This was tested by logging in with a valid user account and clicking on the user’s owned posts, then clicking on the right-hand corner on the three dots that open the edit selector and selecting the trash icon. | The user is redirected to the Add post page when clicking on the trash icon to create a new post, while the old post has been deleted. | Pass | 
+| Follow a User | This was tested by logging in with a valid user account and clicking on follow users in the Most popular profiles section. | The follow button changes from 'Follow' to 'Unfollow,' and the "following" statistic on the user's profile updates accordingly. | Pass | 
+| Unfollow a User | This was tested by logging in with a valid user account and clicking on unfollow users in the Most popular profiles section. | The follow button changes from 'Unfollow' to 'Follow,' and the "following" statistic on the user's profile updates accordingly. | Pass |
+| Like a Post | This was tested by logging in with a valid user account and clicking on the like heart icon. | The heart button turns red, and the count increases next to it. | Pass |
+| Unlike a Post | This was tested by logging in with a valid user account and clicking on the liked heart icon. | The heart button changes back to white, and the count decreases next to it. | Pass |
+| Follower Feed | This was tested by clicking on Feed in the navigation bar and checking that the user ends up on the right landing page. | The user is redirected to the correct landing page where they now only see posts from people they follow. | Pass | 
+| Liked Post Feed | This was tested by clicking on Feed in the navigation bar and checking that the user ends up on the right landing page. | The user is redirected to the correct landing page where they now only see posts they liked. | Pass |
+| Create a Bookmark | This was tested by clicking on the bookmark icon below and validating that the user is being redirected to a folder creation form that allows them to create a new folder or store the post under an existing one. | The user is redirected to a folder creation form after clicking on the bookmark icon below the post, where they can create a new bookmark or store the post under an existing folder when clicking on the existing folder. | Pass |
+| Bookmark Feed | This was tested by clicking on the bookmark icon in the navigation bar and checking that the user ends up on the right bookmark folders landing page. | The user is redirected to a landing page where they can find all created folders as well as the number of posts they have saved under them. Once they click on the folder, it shows them all the bookmarked posts. | Pass |
+| Manage User Profile | This was tested by logging in with a valid user account and clicking on the Profile icon in the navigation bar and checking that the user ends up on the user profile where they can edit or delete their account, change the username, and the password. | The user is able to edit the profile, like uploading a new image, changing the bio, deleting the account, changing the username, and the password. | Pass | 
+| Filter Posts with Searchbar | This was tested by logging in with a valid user account and typing in a keyword into the searchbar that is featured on the homepage, which then filters through the posts to find matches. | The user is able to add keywords to filter through the posts and only get results that contain the relevant keyword. | Pass | 
+| Logout | This was tested by clicking on the "Sign Out" button to log out from the website. | The user is redirected to the sign-in page after clicking on "Sign Out." | Pass | 
 
 
 # Bugs
@@ -192,12 +220,195 @@ The PostsPage component failed to display posts after login due to redundant tok
 
 ## Known Bugs
 
--  Users may need to clear cache and cookies to log in again and use the website properly after signing out.
+-  Users may need to clear cache and cookies to log in again and use the website properly after signing out
+- When trying to edit hashtags on a post, users currently need to remove the hashtag before submitting. This is because the current system doesn't allow concatenated hashtags and sentences to be submitted together
 
 # Deployment
 
-## Steps for Deploying a Django Application on Heroku
-1
-## Forking and Cloning a GitHub Repository
+The project consists of two parts that were deployed separately:
+
+1. A React frontend application deployed to Heroku
+2. A Django REST Framework API also deployed to Heroku
+
+## Frontend Deployment 
+
+The React frontend was deployed following these steps:
+
+1. Create the Heroku App:
+- Log into [Heroku](https://www.heroku.com/)
+- Click "New" to create a new app
+- Give the app a name and select a region
+- Click "Create App"
+
+2. Connect to GitHub:
+- In the Deploy tab, select "GitHub" as the deployment method
+- Connect to GitHub if prompted
+- Search for and select your repository
+- Click "Connect"
+
+3. Set up environment variables:
+- In the Settings tab, click "Reveal Config Vars"
+- Add necessary environment variables:
+```
+REACT_APP_API_URL=https://your-drf-api-url.herokuapp.com
+```
+4. Deploy:
+- In the Deploy tab, select "Enable Automatic Deploys" for automatic deployment when you push to main
+- Click "Deploy Branch" to deploy manually
+- Once complete, click "View" to launch your app
+
+## DRF API Deployment
+
+The [Django REST Framework API](https://github.com/BilalEssafi1/drf-api) was deployed separately following these steps:
+
+1. Create a seperate Heroku App:
+- Log into [Heroku](https://www.heroku.com/)
+- Click "New" to create a new app
+- Give the app a name and select a region
+- Click "Create App"
+
+2. Set Up Environment Variables
+- Create Environment Variables in Your Django Project:
+    - In your Django project directory, create a file named env.py at the root level.
+    - Inside env.py, import the os module. Set up necessary environment variables as follows:
+    ```
+    import os
+    os.environ['SECRET_KEY'] = 'your-unique-secret-key'
+    os.environ['DATABASE_URL'] = 'your-database-url'
+    ```
+
+- Update settings.py:
+    - Open your settings.py file and modify it to use the environment variables:
+        - Replace the existing SECRET_KEY line with:
+        ```
+        SECRET_KEY = os.environ.get('SECRET_KEY')
+        ```
+        - For the database configuration, use dj_database_url to parse the DATABASE_URL:
+        ```
+        import dj_database_url
+        DATABASES = {
+        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
+        }
+        ```
+3. Add Required Imports:
+- At the top of your settings.py, add the necessary imports:
+```
+from pathlib import Path
+import os
+import dj_database_url
+if os.path.isfile('env.py'):
+    import env
+```
+4. Set Environment Variables in Heroku:
+- In your Heroku app dashboard, go to the “Settings” tab and click on “Reveal Config Vars”.
+- Add the DATABASE_URL and SECRET_KEY keys with their respective values.
+3. Configure Static Files and Templates
+- Static Files Settings:
+    - In settings.py, configure your static files settings as follows:
+    ```
+    STATIC_URL = '/static/'
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    ```
+-  Templates Directory:
+    - Set up the templates directory:
+    ```
+    TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+    ```
+    - Modify the TEMPLATES setting to include the new directory:
+    ```
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [TEMPLATES_DIR],
+            ...
+        },
+    ]
+    ```
+- Allowed Hosts:
+    - In settings.py, update the ALLOWED_HOSTS list to include your Heroku app URL:
+        ```
+        ALLOWED_HOSTS = ['your-app-name.herokuapp.com']
+         ````
+
+- Create Required Directories:
+    - In your project structure, create two new folders at the top level: static and templates, to hold your static files and HTML templates, respectively.
+
+4. Create a Procfile
+- Setting Up the Procfile:
+    - In the root directory of your Django project, create a file named Procfile (with a capital "P").
+    - Inside the Procfile, add the following line to specify how to run your application:
+    ```
+    web: gunicorn your_project_name.wsgi
+    ```
+
+5. Migrate Database Models
+- Open your terminal and run the migrations to apply your models to the new PostgreSQL database:
+```
+python manage.py migrate
+```
+6. Push Changes to GitHub
+- Stage, commit, and push your changes to the GitHub repository:
+```
+git add .
+git commit -m "Configured deployment settings for Heroku"
+git push origin main
+```
+
+7. Deploy the Application
+- Deploy on Heroku:
+    - Go back to the Heroku dashboard, navigate to the "Deploy" tab, and manually trigger a deployment of your branch.
+    - Monitor the build log for any errors during the build process.
+- Check Deployment Status:
+    - If the deployment is successful, Heroku will display a message indicating that your app has been deployed, along with a link to your live application.
+
+- Troubleshooting:
+    - If your initial builds fail (common issues might include incorrect static file configuration or misnamed directories), review the error messages, make the necessary code adjustments, and redeploy.
+
+## Forking and Cloning the Repository
+
+### How to Fork this Project:
+
+1. Login to [GitHub](https://github.com/)
+2. Navigate to the frontend repository: https://github.com/BilalEssafi1/ecosphere
+3.  Click on the Fork button in the top-right corner
+4. Select Create a new fork
+
+For the API:
+
+Follow the same steps but navigate to: https://github.com/BilalEssafi1/drf-api
+
+### How to Clone this Project
+
+1. Login to [GitHub](https://github.com/)
+2. Navigate to the frontend repository: https://github.com/BilalEssafi1/ecosphere
+3. Click the green Code button
+4. Under the Clone section, choose your preferred method (HTTPS, SSH, or GitHub CLI)
+5. Open the terminal in your code editor
+- Use the cd command to navigate to the directory where you want to clone the repository
+6. Run the git clone command followed by the repository URL you copied, and press Enter
+
+For the API:
+
+Follow the same steps but use the API repository URL: https://github.com/BilalEssafi1/drf-api
+
 
 # Credits and Acknowledgement
+
+This project benefited from the code institute's training material, documentations, and creative assets, and tutorials found online, helping shape Ecospher's functionality and visual appeal:
+- Code and Structure Inspiration:
+    - [Code Institute's Django Restframework Project](https://github.com/Code-Institute-Solutions/drf-api/tree/6095fae29d4a24d87f9a2ff6dfe4a36f122f5d67): Provided a foundational structure for creating the API that was used throughout the Project.
+    - - [Code Institute's Moments Project](https://github.com/mr-fibonacci/moments/tree/1b62c43fc5c4cafa1dd038d450316db139f463d1): Provided a inpiration for the social media idea and a foundational structure for the Project. 
+
+- Images and Visual Assets:
+    - [Leonardo AI](https://leonardo.ai/): Used to create the Ecosphere logo.
+    - [Istock](https://www.istockphoto.com/de): Used to get assets for posts and fictional user accounts.
+
+- [React Official Documentation](https://legacy.reactjs.org/docs/getting-started.html): 
+  This documentation was instrumental in implementing React hooks (useState, useEffect) throughout the components, Context API implementation for state management, and the creation of custom hooks like useRedirect and useClickOutsideToggle.
+
+- [React Bootstrap Official Documentation](https://react-bootstrap.netlify.app/):
+  The project's UI components extensively utilize React Bootstrap for forms, modals, and layout components. Their documentation provided essential patterns for responsive layouts and component styling, which were implemented in the navigation system, authentication forms, and post displays.
+
+- [Django REST Framework Official Documentation](https://www.django-rest-framework.org/):
+  The backend API structure follows DRF best practices for serializers, permissions, and viewsets. This documentation was crucial in implementing features like the bookmark system and ensuring proper API response formatting. Their guidelines helped create a robust and scalable API structure.
