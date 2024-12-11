@@ -88,7 +88,60 @@ By prioritizing user needs and following an agile methodology, I aimed to delive
 
 # Features Implemented
 
+# Features Implemented
 
+## Homepage
+- Navbar: User-friendly navigation bar is present on all pages and it adapts to the user's authentication status (logged in or not.) Logged-in users have access to Post, like, comment, follow, bookmark and profile features. 
+- Home Page: Displays recent posts, popular profiles, number of likes and comments as well as a searchbar. 
+![Screenshot website design](src/assets/homepage-ecosphere.png)
+
+## User Registration and Profile
+- Account Creation: Users can register to like posts, comment on posts, add own posts or follow members they like.
+![Screenshot registration design](src/assets/signup-ecosphere.png)
+- Profile Management: Users can update profile details and change passwords.
+![Screenshot user management design](src/assets/profile-ecosphere.png)
+- Account Deletion: Option to delete account with confirmation prompts.
+![Screenshot delete account](src/assets/account-deletion.png)
+
+## Add and Edit Post
+- Add Post: Allows users to add a post including titile, content, image, and hashtags for better findability.
+![Screenshot add post design](src/assets/post-ecosphere.png)
+- Edit Post: Allows users to edit and delete a post.
+![Screenshot edit post design](src/assets/edit-post-ecosphere.png)
+
+## Comment and Edit Comment
+- Comment on a Post: Allows users to add a comment to a post.
+![Screenshot comment design](src/assets/comment-ecosphere.png)
+- Edit Comment: Allows users to edit and delete comments. 
+![Screenshot edit comment design](src/assets/edit-comment-ecosphere.png)
+
+## Like and unlike a post
+- Like and unlike a post: Allows me to like a or unlike a post when clicking on the heart icon.
+![Screenshot like and unlike post design](src/assets/like-post-ecosphere.png)
+- Liked Post Feed: Liked Posts are saved in th liked post feed for better findability.
+![Screenshot liked feed design](src/assets/liked-post-feed.png)
+
+## Follow Users
+- Follow and unfollow users: Allows me to follow users I like and also unfollow them.
+![Screenshot follow and unfollow users design](src/assets/follow-users-ecosphere.png)
+- Followed Users Feed: Posts from followed users are saved in the followed user feed for better findability.
+![Screenshot follower feed design](src/assets/follower-feed-ecosphere.png)
+
+## Bookmarks
+- Bookmark Posts: Allows users to bookmark posts into a self created folder structure for better findability.
+![Screenshot bookmark creation design](src/assets/bookmarks-creation.png)
+- Bookmarked Folders Feed: Allows users to access posts saved in self created folderrs
+![Screenshot bookmark folder design](src/assets/bookmarks-folders.png)
+
+## Responsive Design
+The website is mobile-friendly and responsive across all devices, optimized with Bootstrap for consistent styling.
+![Screenshot responsive design](src/assets/responsive-design.png)
+
+## Future Feature ideas
+- Add challenges and badges to allow users to suggest and participate in sustainability challenges and earn badges for participating or winning the challenge
+- Implement advanced token refresh functionality to resolve the need for clearing cache and cookies to log in after signing out, ensuring seamless handling of expired tokens and CSRF synchronization.
+- Add a more custom 404 pages
+- Add self-service forgot password feature via email verification
 
 
 # Testing
@@ -138,6 +191,8 @@ This resolved the issue, and now new users see the correct default avatar image 
 The PostsPage component failed to display posts after login due to redundant token validation causing authentication errors. The issue stemmed from explicit token checking in the component while the axiosReq instance was already handling authentication through interceptors. The solution involved simplifying the PostsPage component by removing manual token validation and relying on the existing axios interceptors for authentication. We also added the currentUser to the dependency array to ensure the component responds to authentication state changes. These changes allowed the component to properly utilize the authentication system already in place, resolving the "No valid authentication token" error and successfully displaying posts after login.
 
 ## Known Bugs
+
+-  Users may need to clear cache and cookies to log in again and use the website properly after signing out.
 
 # Deployment
 
