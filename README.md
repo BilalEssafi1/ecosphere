@@ -150,11 +150,11 @@ The website is mobile-friendly and responsive across all devices, optimized with
 
 - HTML
     - No errors were returned when passing through the official W3C validator.
-![Screenshot html testing](static/assets/images/readme/html-validation.png)
+![Screenshot html testing](src/assets/html-validation.png)
 
 - CSS
     - No errors were returned when passing through the official Jigsaw validator.
-![Screenshot html testing](static/assets/images/readme/css-validation.png)
+![Screenshot html testing](src/assets/css-validation.png)
 
 - JavaScript
     - No significant issues were returned when passing the code through Jshint.
