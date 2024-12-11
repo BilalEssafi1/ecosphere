@@ -158,7 +158,7 @@ The website is mobile-friendly and responsive across all devices, optimized with
 
 - JavaScript
     - No significant issues were returned when passing the code through Jshint.
-![Screenshot javascript testing](static/assets/images/readme/jshint-validation.png)
+![Screenshot javascript testing](src/assets/jshint-validation.png)
 
 - PEP8 Validation: The code was validated using PEP8 style guide without any errors.
 ![Screenshot python testing](static/assets/images/readme/pep8-validation.png)
