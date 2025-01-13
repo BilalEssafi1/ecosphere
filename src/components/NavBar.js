@@ -28,49 +28,19 @@ const NavBar = () => {
    */
   const handleSignOut = async () => {
     try {
-      // Extract the CSRF token from cookies
-      const csrfToken = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("csrftoken="))
-        ?.split("=")[1];
-
-      // Make the logout request to the backend with the CSRF token
-      await axios.post(
-        "/dj-rest-auth/logout/",
-        {},
-        {
-          withCredentials: true, // Include cookies with the request
-          headers: {
-            "X-CSRFToken": csrfToken, // CSRF token for authentication
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      // Clear user state and authentication tokens
+      await axios.post("/dj-rest-auth/logout/", {}, {
+        withCredentials: true
+      });
+      
+      // Clear user state and tokens
       setCurrentUser(null);
       removeTokenTimestamp();
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-
-      // Helper function to clear cookies
-      const removeCookie = (name) => {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`;
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`;
-      };
-
-      // Remove all relevant cookies
-      removeCookie("csrftoken");
-      removeCookie("my-app-auth");
-      removeCookie("my-refresh-token");
-      removeCookie("sessionid");
-
-      // Redirect the user to the signin page
-      window.location.href = "/signin";
+      localStorage.clear();
+      
+      // Navigate to signin
+      window.location.href = '/signin';
     } catch (err) {
       console.error("Logout failed:", err);
-      alert("An error occurred while logging out. Please try again.");
     }
   };
 
