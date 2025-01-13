@@ -22,68 +22,59 @@ const NavBar = () => {
 
   /**
    * Handles user sign out
-   * Clears tokens, cookies, and user data
-   * Ensures clean state for next login attempt
+   * - Sends a logout request to the backend with the CSRF token.
+   * - Clears all relevant cookies and localStorage tokens.
+   * - Redirects the user to the signin page after logout.
    */
   const handleSignOut = async () => {
     try {
-      // Get CSRF token from cookies
+      // Extract the CSRF token from cookies
       const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
+        .split("; ")
+        .find((row) => row.startsWith("csrftoken="))
+        ?.split("=")[1];
 
-      // Make logout request with CSRF token
+      // Make the logout request to the backend with the CSRF token
       await axios.post(
         "/dj-rest-auth/logout/",
         {},
         {
-          withCredentials: true,
+          withCredentials: true, // Include cookies with the request
           headers: {
-            'X-CSRFToken': csrfToken,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+            "X-CSRFToken": csrfToken, // CSRF token for authentication
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      // Clear user state and tokens
+      // Clear user state and authentication tokens
       setCurrentUser(null);
       removeTokenTimestamp();
-      
-      // Clear stored tokens
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      
-      // Function to expire and remove a cookie
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+
+      // Helper function to clear cookies
       const removeCookie = (name) => {
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`;
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`;
       };
 
-      // Clear specific authentication cookies
-      removeCookie('csrftoken');
-      removeCookie('my-app-auth');
-      removeCookie('my-refresh-token');
-      removeCookie('sessionid');
+      // Remove all relevant cookies
+      removeCookie("csrftoken");
+      removeCookie("my-app-auth");
+      removeCookie("my-refresh-token");
+      removeCookie("sessionid");
 
-      // Clear all domain cookies if not on localhost
-      if (window.location.hostname !== 'localhost') {
-        const cookies = document.cookie.split(';');
-        cookies.forEach(cookie => {
-          const cookieName = cookie.split('=')[0].trim();
-          removeCookie(cookieName);
-        });
-      }
-
-      // Force reload to signin page for clean state
-      window.location.href = '/signin';
-      
+      // Redirect the user to the signin page
+      window.location.href = "/signin";
     } catch (err) {
+      console.error("Logout failed:", err);
+      alert("An error occurred while logging out. Please try again.");
     }
   };
 
-  // Add post icon - shows only when user is logged in
+  // Add post icon - visible only when user is logged in
   const addPostIcon = (
     <NavLink
       className={styles.NavLink}
@@ -94,7 +85,7 @@ const NavBar = () => {
     </NavLink>
   );
 
-  // Icons shown when user is logged in
+  // Icons shown when the user is logged in
   const loggedInIcons = (
     <>
       <NavLink
@@ -111,7 +102,6 @@ const NavBar = () => {
       >
         <i className="fas fa-heart"></i>Liked
       </NavLink>
-      {/* Add Bookmarks NavLink */}
       <NavLink
         className={styles.NavLink}
         activeClassName={styles.Active}
@@ -131,7 +121,7 @@ const NavBar = () => {
     </>
   );
 
-  // Icons shown when user is logged out
+  // Icons shown when the user is logged out
   const loggedOutIcons = (
     <>
       <NavLink
