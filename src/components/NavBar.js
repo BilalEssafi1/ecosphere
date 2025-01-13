@@ -54,49 +54,42 @@ const NavBar = () => {
       // Clear stored tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      
-      // Function to expire and remove a cookie with multiple variants
+
+      // Function to remove cookies with specific Heroku domain
       const removeCookie = (name) => {
-        // Get the current domain
-        const domain = window.location.hostname;
-        const variants = [
-          // Root path, no domain specified
+        // Target the specific herokuapp.com domain and its subdomain
+        const cookieOptions = [
+          // Root domain with specific path
+          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+          // Handle the .herokuapp.com domain
+          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+          // Without domain specification
           `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
-          // Root path with domain
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`,
-          // Root path with www subdomain
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${domain}`,
-          // Secure + SameSite variants
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure`,
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=strict`,
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=lax`,
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`
+          // With secure and SameSite attributes
+          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
         ];
 
-        // Try all variants to ensure cookie deletion
-        variants.forEach(variant => {
-          document.cookie = variant;
+        // Apply all cookie deletion variants
+        cookieOptions.forEach(option => {
+          document.cookie = option;
         });
       };
 
       // Clear specific authentication cookies
-      const authCookies = ['csrftoken', 'sessionid', 'my-app-auth', 'my-refresh-token'];
-      authCookies.forEach(cookieName => removeCookie(cookieName));
-
-      // Clear all cookies if not on localhost
-      if (window.location.hostname !== 'localhost') {
-        const cookies = document.cookie.split(';');
-        cookies.forEach(cookie => {
-          const cookieName = cookie.split('=')[0].trim();
-          removeCookie(cookieName);
-        });
-      }
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
+      });
 
       // Force reload to signin page for clean state
       window.location.href = '/signin';
       
     } catch (err) {
       console.error('Logout failed:', err);
+      // Attempt to clear cookies even if the logout request fails
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
+      });
     }
   };
 
