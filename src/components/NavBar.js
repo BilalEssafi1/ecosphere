@@ -12,6 +12,27 @@ import axios from "axios";
 import useClickOutsideToggle from "../hooks/useClickOutsideToggle";
 import { removeTokenTimestamp } from "../utils/utils";
 
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+  // Target the specific herokuapp.com domain and its subdomain
+  const cookieOptions = [
+    // Root domain with specific path
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+    // Handle the .herokuapp.com domain
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+    // Without domain specification
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+    // With secure and SameSite attributes
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
+  ];
+
+  // Apply all cookie deletion variants
+  cookieOptions.forEach(option => {
+    document.cookie = option;
+  });
+};
+
 const NavBar = () => {
   // Get current user and setter from context
   const currentUser = useCurrentUser();
@@ -54,27 +75,6 @@ const NavBar = () => {
       // Clear stored tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-
-      // Function to remove cookies with specific Heroku domain
-      const removeCookie = (name) => {
-        // Target the specific herokuapp.com domain and its subdomain
-        const cookieOptions = [
-          // Root domain with specific path
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
-          // Handle the .herokuapp.com domain
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-          // Without domain specification
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
-          // With secure and SameSite attributes
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
-          `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
-        ];
-
-        // Apply all cookie deletion variants
-        cookieOptions.forEach(option => {
-          document.cookie = option;
-        });
-      };
 
       // Clear specific authentication cookies
       ['csrftoken', 'sessionid'].forEach(cookieName => {
