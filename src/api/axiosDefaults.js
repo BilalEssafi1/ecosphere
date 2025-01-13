@@ -3,6 +3,8 @@ import axios from "axios";
 axios.defaults.baseURL = "https://drf-api-green-social-61be33473742.herokuapp.com/";
 axios.defaults.headers.post["Content-Type"] = "application/json";
 axios.defaults.withCredentials = true;
+axios.defaults.xsrfCookieName = 'csrftoken';
+axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
 export const axiosReq = axios.create();
 export const axiosRes = axios.create();
