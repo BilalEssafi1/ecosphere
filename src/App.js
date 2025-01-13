@@ -16,6 +16,7 @@ import UserPasswordForm from "./pages/profiles/UserPasswordForm";
 import ProfileEditForm from "./pages/profiles/ProfileEditForm";
 import BookmarksPage from "./pages/bookmarks/BookmarksPage";
 import FolderBookmarksPage from "./pages/bookmarks/FolderBookmarksPage";
+import Home from "./components/Home"; // Import the new Home component
 
 function App() {
   const currentUser = useCurrentUser();
@@ -26,10 +27,13 @@ function App() {
       <NavBar />
       <Container className={styles.Main}>
         <Switch>
-          {/* Home page route */}
+          {/* New home page route */}
+          <Route exact path="/" render={() => <Home />} />
+
+          {/* Posts page route */}
           <Route
             exact
-            path="/"
+            path="/posts"
             render={() => (
               <PostsPage message="No results found. Adjust the search keyword." />
             )}
@@ -63,26 +67,26 @@ function App() {
           <Route
             exact
             path="/bookmarks"
-            render={() => (
+            render={() =>
               currentUser ? (
                 <BookmarksPage message="No folders found. Create a folder to start bookmarking posts." />
               ) : (
                 <Redirect to="/signin" />
               )
-            )}
+            }
           />
 
           {/* Specific folder's bookmarks */}
           <Route
             exact
             path="/folders/:folder_id"
-            render={() => (
+            render={() =>
               currentUser ? (
                 <FolderBookmarksPage />
               ) : (
                 <Redirect to="/signin" />
               )
-            )}
+            }
           />
 
           {/* Authentication routes */}

@@ -1,0 +1,39 @@
+/* HomePage Styling */
+.Home {
+    background-color: #f5f6fa;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    max-width: 800px;
+    text-align: center;
+  }
+  
+  .Home h1 {
+    font-size: 2rem;
+    color: #242a3d;
+    margin-bottom: 10px;
+  }
+  
+  .Home p {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 20px;
+  }
+  
+  .ViewPostsButton {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+  }
+  
+  .ViewPostsButton:hover {
+    background-color: #0056b3;
+    cursor: pointer;
+  }
