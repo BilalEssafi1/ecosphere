@@ -26,18 +26,17 @@ const BookmarkButton = ({ post, currentUser }) => {
 
       const { data } = await axiosReq.post("/bookmarks/", {
         post: parseInt(post.id),
-        folder: parseInt(folderId),
+        folder: parseInt(folderId)
       });
 
       setIsBookmarked(true);
       setShowModal(false);
     } catch (err) {
       // Set error message for user feedback
-      const errorMsg = err.response?.data?.detail || "Error saving bookmark. Please try again.";
-      setError(errorMsg);
-
+      setError(err.response?.data?.detail || "Error saving bookmark. Please try again.");
+      
       // Show error to user
-      alert(errorMsg);
+      alert(error);
     }
   };
 
@@ -50,11 +49,8 @@ const BookmarkButton = ({ post, currentUser }) => {
     try {
       await axiosReq.delete(`/bookmarks/${post.bookmark_id}/`);
       setIsBookmarked(false);
-      alert("Bookmark removed successfully.");
     } catch (err) {
-      const errorMsg = "Error removing bookmark. Please try again.";
-      setError(errorMsg);
-      alert(errorMsg);
+      alert("Error removing bookmark. Please try again.");
     }
   };
 
@@ -65,7 +61,7 @@ const BookmarkButton = ({ post, currentUser }) => {
           placement="top"
           overlay={<Tooltip>{isBookmarked ? "Remove bookmark" : "Save post"}</Tooltip>}
         >
-          <span
+          <span 
             onClick={() => (isBookmarked ? handleUnbookmark() : setShowModal(true))}
             className={styles.BookmarkIconContainer}
           >
