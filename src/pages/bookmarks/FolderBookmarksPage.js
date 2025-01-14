@@ -6,7 +6,7 @@ import styles from "../../styles/FolderBookmarksPage.module.css";
 import Post from "../posts/Post";
 import NoResults from "../../assets/no-results.png";
 import { useCurrentUser } from "../../contexts/CurrentUserContext";
-import { BookmarkDropdown, BookmarkFolderDropdown } from "../../components/BookmarkMoreDropdown";
+import { BookmarkDropdown } from "../../components/BookmarkMoreDropdown";
 
 /**
 * Displays all bookmarks within a specific folder
@@ -15,6 +15,7 @@ import { BookmarkDropdown, BookmarkFolderDropdown } from "../../components/Bookm
 const FolderBookmarksPage = () => {
   // Get folder ID from URL parameters
   const { folder_id } = useParams();
+  const history = useHistory();
   // State for storing bookmarks data
   const [bookmarks, setBookmarks] = useState({ results: [] });
   // Loading state management
@@ -23,10 +24,6 @@ const FolderBookmarksPage = () => {
   const [error, setError] = useState(null);
   // Get current user context for authentication
   const currentUser = useCurrentUser();
-
-  // Additional state for folder management functionality
-  const history = useHistory();
-  const [folder, setFolder] = useState(null);
 
   useEffect(() => {
     /**
@@ -44,19 +41,14 @@ const FolderBookmarksPage = () => {
           return;
         }
 
-        // Make authenticated requests to get both folder and bookmarks data
-        const [{ data: folderData }, { data: bookmarksData }] = await Promise.all([
-          axiosReq.get(`/folders/${folder_id}/`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axiosReq.get(`/folders/${folder_id}/bookmarks/`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        ]);
+        // Make authenticated request to get bookmarks
+        const { data } = await axiosReq.get(`/folders/${folder_id}/bookmarks/`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         
-        // Set both folder and bookmarks data
-        setFolder(folderData);
-        setBookmarks(bookmarksData);
+        setBookmarks(data);
         setError(null);
       } catch (err) {
         // Set error message for user feedback
@@ -72,6 +64,23 @@ const FolderBookmarksPage = () => {
     }
   }, [folder_id, currentUser]);
 
+  /**
+   * Handles removing a bookmark from the folder
+   */
+  const handleRemoveBookmark = async (bookmarkId) => {
+    try {
+      await axiosReq.delete(`/bookmarks/${bookmarkId}/`);
+      setBookmarks(prevBookmarks => ({
+        ...prevBookmarks,
+        results: prevBookmarks.results.filter(
+          bookmark => bookmark.id !== bookmarkId
+        ),
+      }));
+    } catch (err) {
+      setError("Failed to remove bookmark");
+    }
+  };
+
   return (
     <div className={styles.FolderBookmarksPage}>
       {/* Display any error messages */}
@@ -80,18 +89,6 @@ const FolderBookmarksPage = () => {
       {/* Conditional rendering based on loading and data states */}
       {hasLoaded ? (
         <>
-          {/* Folder management header - new addition */}
-          {folder && (
-            <div className={styles.FolderHeader}>
-              <h1>{folder.name}</h1>
-              <BookmarkFolderDropdown
-                folder={folder}
-                onEdit={(updatedFolder) => setFolder(updatedFolder)}
-                onDelete={() => history.push("/bookmarks")}
-              />
-            </div>
-          )}
-
           {bookmarks?.results?.length ? (
             bookmarks.results.map((bookmark) => (
               <div key={bookmark.id} className={styles.BookmarkItem}>
@@ -100,18 +97,11 @@ const FolderBookmarksPage = () => {
                   setPosts={setBookmarks}
                   postPage
                 />
-                {/* Bookmark removal dropdown - new addition */}
+                {/* Add bookmark removal option */}
                 <div className={styles.BookmarkActions}>
                   <BookmarkDropdown
                     bookmark={bookmark}
-                    onDelete={(deletedId) => {
-                      setBookmarks(prevBookmarks => ({
-                        ...prevBookmarks,
-                        results: prevBookmarks.results.filter(
-                          b => b.id !== deletedId
-                        ),
-                      }));
-                    }}
+                    onDelete={() => handleRemoveBookmark(bookmark.id)}
                   />
                 </div>
               </div>
