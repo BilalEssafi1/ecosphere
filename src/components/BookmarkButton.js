@@ -9,10 +9,11 @@ import BookmarkFolderModal from "./BookmarkFolderModal";
  * Allows users to save posts to folders and remove bookmarks
  */
 const BookmarkButton = ({ post, currentUser }) => {
-  // State for modal visibility and bookmark status
+  // State management
   const [showModal, setShowModal] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(post?.is_bookmarked);
-  const [error, setError] = useState("");
+  // Removed error state and added bookmarkId state
+  const [bookmarkId, setBookmarkId] = useState(post?.bookmark_id);
 
   /**
    * Handles saving a post to a specific folder
@@ -21,39 +22,28 @@ const BookmarkButton = ({ post, currentUser }) => {
    */
   const handleBookmark = async (folderId) => {
     try {
-      // Clear any previous errors
-      setError("");
-
-      // Validate folder selection
       if (!folderId) {
         alert("Please select a folder");
         return;
       }
 
+      // Simplified post data structure
       const { data } = await axiosReq.post("/bookmarks/", {
-        post: parseInt(post.id),
-        folder: parseInt(folderId)
+        post: post.id,
+        folder: folderId
       });
 
+      // Added bookmark ID tracking
+      setBookmarkId(data.id);
       setIsBookmarked(true);
       setShowModal(false);
     } catch (err) {
-      // Get the error message from the response
-      let errorMessage;
-      
-      if (err.response?.data?.detail) {
-        // Check if the error is about an existing bookmark
-        if (err.response.data.detail.includes("already bookmarked")) {
-          errorMessage = "This post is already bookmarked in this folder.";
-        } else {
-          errorMessage = err.response.data.detail;
-        }
+      // Improved error handling
+      if (err.response?.status === 400) {
+        alert(err.response.data.detail || "Error saving bookmark");
       } else {
-        errorMessage = "Error saving bookmark. Please try again.";
+        alert("An error occurred while saving the bookmark");
       }
-      
-      alert(errorMessage);
-      setError(errorMessage);
       setShowModal(false);
     }
   };
@@ -65,12 +55,16 @@ const BookmarkButton = ({ post, currentUser }) => {
    */
   const handleUnbookmark = async () => {
     try {
-      await axiosReq.delete(`/bookmarks/${post.bookmark_id}/`);
+      // Added ID verification before deletion
+      if (!bookmarkId) {
+        console.error('No bookmark ID available');
+        return;
+      }
+      await axiosReq.delete(`/bookmarks/${bookmarkId}/`);
       setIsBookmarked(false);
+      setBookmarkId(null);
     } catch (err) {
-      const errorMessage = "Error removing bookmark. Please try again.";
-      alert(errorMessage);
-      setError(errorMessage);
+      alert("Error removing bookmark. Please try again.");
     }
   };
 
