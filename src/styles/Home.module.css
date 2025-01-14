@@ -24,7 +24,7 @@
   .ViewPostsButton {
     display: inline-block;
     padding: 10px 20px;
-    background-color: #007bff;
+    background-color: #4caf50;
     color: #fff;
     text-decoration: none;
     border-radius: 20px;
@@ -34,6 +34,6 @@
   }
   
   .ViewPostsButton:hover {
-    background-color: #0056b3;
+    background-color: #388e3c;
     cursor: pointer;
   }
