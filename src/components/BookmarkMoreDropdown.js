@@ -36,7 +36,7 @@ export const BookmarkDropdown = ({ bookmark, onDelete }) => {
             onClick={() => setShowDeleteModal(true)}
             aria-label="delete-bookmark"
           >
-            <i className="fas fa-trash-alt" /> Remove bookmark
+            <i className="fas fa-trash-alt" /> Delete
           </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown>
