@@ -22,7 +22,7 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
  * Dropdown component for individual bookmarks
  * Provides option to remove bookmark from folder
  */
-export const BookmarkDropdown = ({ bookmark, onDelete }) => {
+const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   return (
@@ -74,7 +74,7 @@ export const BookmarkDropdown = ({ bookmark, onDelete }) => {
  * Dropdown component for bookmark folders
  * Provides edit and delete functionality
  */
-export const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
+const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [folderName, setFolderName] = useState(folder.name);
