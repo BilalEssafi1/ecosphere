@@ -1,74 +1,90 @@
 /* BookmarksPage styling */
 .BookmarksPage {
-    font-family: "Poppins", sans-serif;
-    background-color: #e9f6f0; /* Light background color */
-    min-height: 100vh;
-    color: #333333;
-    padding-top: 81px; /* Consistent padding like in App.module.css */
-  }
-  
-  .BookmarksPage h1 {
-    font-size: 2rem;
-    color: #333;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  .FolderItem {
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Adding subtle shadow */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .FolderItem:hover {
-    background-color: #f1f1f1; /* Light hover effect */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow on hover */
-  }
-  
-  .FolderItem span {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #333333;
-  }
-  
-  .FolderItem span:last-child {
-    font-size: 1rem;
-    color: #888;
-  }
-  
-  /* Link Styling */
-  a {
-    color: #4caf50; /* Green link color */
-    text-decoration: none;
-    transition: color 0.3s ease;
-  }
-  
-  a:hover {
-    text-decoration: underline;
-  }
-  
-  a:hover i {
-    color: #388e3c; /* Slightly darker green on hover */
-    transition: color 0.3s ease;
-  }
-  
-  /* Icon Styling */
-  i {
-    color: #8bc34a; /* Green color for icons */
-    font-size: 1.6rem;
-    padding: 7px;
-    vertical-align: middle;
-  }
-  
-  i:hover {
-    cursor: pointer;
-    transition: color 0.3s ease;
-    color: #388e3c; /* Darker green on hover */
-  }
+  font-family: "Poppins", sans-serif;
+  background-color: #e9f6f0;
+  min-height: 100vh;
+  color: #333333;
+  padding-top: 81px;
+}
+
+.BookmarksPage h1 {
+  font-size: 2rem;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.FolderItem {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.FolderItem:hover {
+  background-color: #f1f1f1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.FolderContent {
+  flex-grow: 1;
+  margin-right: 16px;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.FolderContent span {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333333;
+}
+
+.FolderContent span:last-child {
+  font-size: 1rem;
+  color: #888;
+  margin-left: auto;
+}
+
+/* Link Styling */
+a {
+  color: #4caf50;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a:hover i {
+  color: #388e3c;
+  transition: color 0.3s ease;
+}
+
+/* Icon Styling */
+i {
+  color: #8bc34a;
+  font-size: 1.6rem;
+  padding: 7px;
+  vertical-align: middle;
+}
+
+i:hover {
+  cursor: pointer;
+  transition: color 0.3s ease;
+  color: #388e3c;
+}
+
+/* Dropdown menu positioning */
+.FolderActions {
+  position: relative;
+  z-index: 1000;
+}
