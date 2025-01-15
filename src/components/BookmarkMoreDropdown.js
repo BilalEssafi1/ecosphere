@@ -67,3 +67,5 @@ export const BookmarkDropdown = ({ bookmark, onDelete }) => {
     </>
   );
 };
+
+export default BookmarkFolderDropdown;
