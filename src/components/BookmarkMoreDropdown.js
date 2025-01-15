@@ -24,7 +24,7 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const handleDelete = async () => {
     try {
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
-      onDelete(bookmark.id);
+      onDelete();
       setShowDeleteModal(false);
     } catch (err) {
       console.log("Delete error:", err);
@@ -60,7 +60,10 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDelete}>
+          <Button 
+            variant="danger" 
+            onClick={handleDelete}
+          >
             Remove
           </Button>
         </Modal.Footer>
@@ -78,25 +81,36 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
-      const { data } = await axiosReq.put(`/folders/${folder.id}/`, {
-        name: folderName,
-      });
+      const formData = new FormData();
+      formData.append('name', folderName);
+
+      const { data } = await axiosReq.put(`/folders/${folder.id}/`, formData);
       onEdit(data);
       setShowEditModal(false);
       setError("");
     } catch (err) {
-      console.log("Edit error:", err);
-      setError(err.response?.data?.detail || "Failed to update folder name");
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError("Failed to update folder name");
+      }
     }
   };
 
   const handleDelete = async () => {
     try {
-      await axiosReq.delete(`/folders/${folder.id}/`);
-      onDelete(folder.id);
-      setShowDeleteModal(false);
+      const response = await axiosReq.delete(`/folders/${folder.id}/`);
+      if (response.status === 204 || response.status === 200) {
+        onDelete(folder.id);
+        setShowDeleteModal(false);
+      }
     } catch (err) {
       console.log("Delete error:", err);
+      // If we get a 404, the folder is already gone
+      if (err.response?.status === 404) {
+        onDelete(folder.id);
+        setShowDeleteModal(false);
+      }
     }
   };
 

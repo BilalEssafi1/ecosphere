@@ -8,6 +8,7 @@ import { BookmarkFolderDropdown } from "../../components/BookmarkMoreDropdown";
 const BookmarksPage = () => {
   const [folders, setFolders] = useState({ results: [] });
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [error, setError] = useState("");
 
   /**
    * Fetch all bookmark folders on page load.
@@ -19,7 +20,8 @@ const BookmarksPage = () => {
         setFolders(data);
         setHasLoaded(true);
       } catch (err) {
-        console.log("Fetch error:", err);
+        console.log(err);
+        setError("Failed to load folders");
         setHasLoaded(true);
       }
     };
@@ -28,7 +30,7 @@ const BookmarksPage = () => {
   }, []);
 
   /**
-   * Handle updating folders list after edit
+   * Update folders state after successful edit
    */
   const handleFolderEdit = (updatedFolder) => {
     setFolders(prevFolders => ({
@@ -40,7 +42,7 @@ const BookmarksPage = () => {
   };
 
   /**
-   * Handle updating folders list after deletion
+   * Update folders state after successful deletion
    */
   const handleFolderDelete = (deletedId) => {
     setFolders(prevFolders => ({
@@ -52,25 +54,32 @@ const BookmarksPage = () => {
   return (
     <div className={styles.BookmarksPage}>
       <h1>Bookmarks</h1>
+      {error && <div className={styles.ErrorMessage}>{error}</div>}
       {hasLoaded ? (
         folders.results.length ? (
           folders.results.map((folder) => (
             <div key={folder.id} className={styles.FolderItem}>
               <div className={styles.FolderContent}>
                 <Link to={`/folders/${folder.id}`}>
-                  <span>{folder.name}</span>
-                  <span>{folder.bookmarks_count} saved</span>
+                  <span className={styles.FolderName}>{folder.name}</span>
+                  <span className={styles.BookmarkCount}>
+                    {folder.bookmarks_count} saved
+                  </span>
                 </Link>
               </div>
-              <BookmarkFolderDropdown 
-                folder={folder}
-                onEdit={handleFolderEdit}
-                onDelete={handleFolderDelete}
-              />
+              <div className={styles.FolderActions}>
+                <BookmarkFolderDropdown 
+                  folder={folder}
+                  onEdit={handleFolderEdit}
+                  onDelete={handleFolderDelete}
+                />
+              </div>
             </div>
           ))
         ) : (
-          <p>No folders yet. Create some to start saving posts!</p>
+          <p className={styles.NoResults}>
+            No folders yet. Create some to start saving posts!
+          </p>
         )
       ) : (
         <Asset spinner />
