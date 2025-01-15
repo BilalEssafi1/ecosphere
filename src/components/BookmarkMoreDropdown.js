@@ -81,10 +81,10 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
-      const formData = new FormData();
-      formData.append('name', folderName);
-
-      const { data } = await axiosReq.put(`/folders/${folder.id}/`, formData);
+      // Send data as JSON object instead of FormData
+      const { data } = await axiosReq.put(`/folders/${folder.id}/`, {
+        name: folderName,
+      });
       onEdit(data);
       setShowEditModal(false);
       setError("");
