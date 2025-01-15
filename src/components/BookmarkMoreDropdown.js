@@ -18,12 +18,18 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
   />
 ));
 
-/**
- * Dropdown component for individual bookmarks
- * Provides option to remove bookmark from folder
- */
 const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
+      onDelete(bookmark.id);
+      setShowDeleteModal(false);
+    } catch (err) {
+      console.log("Delete error:", err);
+    }
+  };
 
   return (
     <>
@@ -43,7 +49,6 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
         </Dropdown.Menu>
       </Dropdown>
 
-      {/* Delete confirmation modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Remove Bookmark</Modal.Title>
@@ -55,13 +60,7 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
-            onClick={() => {
-              onDelete();
-              setShowDeleteModal(false);
-            }}
-          >
+          <Button variant="danger" onClick={handleDelete}>
             Remove
           </Button>
         </Modal.Footer>
@@ -70,10 +69,6 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
   );
 };
 
-/**
- * Dropdown component for bookmark folders
- * Provides edit and delete functionality
- */
 const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -90,7 +85,18 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
       setShowEditModal(false);
       setError("");
     } catch (err) {
+      console.log("Edit error:", err);
       setError(err.response?.data?.detail || "Failed to update folder name");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axiosReq.delete(`/folders/${folder.id}/`);
+      onDelete(folder.id);
+      setShowDeleteModal(false);
+    } catch (err) {
+      console.log("Delete error:", err);
     }
   };
 
@@ -98,7 +104,7 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
     <>
       <Dropdown className="ml-auto" drop="left">
         <Dropdown.Toggle as={ThreeDots} />
-        <Dropdown.Menu 
+        <Dropdown.Menu
           className="text-center"
           popperConfig={{ strategy: "fixed" }}
         >
@@ -166,13 +172,7 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
-            onClick={() => {
-              onDelete(folder.id);
-              setShowDeleteModal(false);
-            }}
-          >
+          <Button variant="danger" onClick={handleDelete}>
             Delete
           </Button>
         </Modal.Footer>

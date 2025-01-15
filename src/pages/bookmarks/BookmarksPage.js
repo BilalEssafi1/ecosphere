@@ -19,6 +19,7 @@ const BookmarksPage = () => {
         setFolders(data);
         setHasLoaded(true);
       } catch (err) {
+        console.log("Fetch error:", err);
         setHasLoaded(true);
       }
     };
@@ -27,7 +28,7 @@ const BookmarksPage = () => {
   }, []);
 
   /**
-   * Handle updating folder after edit
+   * Handle updating folders list after edit
    */
   const handleFolderEdit = (updatedFolder) => {
     setFolders(prevFolders => ({
@@ -39,7 +40,7 @@ const BookmarksPage = () => {
   };
 
   /**
-   * Handle removing folder after deletion
+   * Handle updating folders list after deletion
    */
   const handleFolderDelete = (deletedId) => {
     setFolders(prevFolders => ({
@@ -57,10 +58,8 @@ const BookmarksPage = () => {
             <div key={folder.id} className={styles.FolderItem}>
               <div className={styles.FolderContent}>
                 <Link to={`/folders/${folder.id}`}>
-                  <span className={styles.FolderName}>{folder.name}</span>
-                  <span className={styles.BookmarkCount}>
-                    {folder.bookmarks_count} saved
-                  </span>
+                  <span>{folder.name}</span>
+                  <span>{folder.bookmarks_count} saved</span>
                 </Link>
               </div>
               <BookmarkFolderDropdown 
