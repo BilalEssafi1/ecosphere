@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
@@ -20,12 +20,21 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
 
 const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [mounted, setMounted] = useState(true);
+
+  useEffect(() => {
+    return () => {
+      setMounted(false);
+    };
+  }, []);
 
   const handleDelete = async () => {
     try {
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
-      onDelete();
-      setShowDeleteModal(false);
+      if (mounted) {
+        onDelete();
+        setShowDeleteModal(false);
+      }
     } catch (err) {
       console.log("Delete error:", err);
     }
@@ -77,40 +86,47 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [folderName, setFolderName] = useState(folder.name);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(true);
+
+  useEffect(() => {
+    return () => {
+      setMounted(false);
+    };
+  }, []);
 
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
-      // Send data as JSON object instead of FormData
       const { data } = await axiosReq.put(`/folders/${folder.id}/`, {
         name: folderName,
+        owner: folder.owner
       });
-      onEdit(data);
-      setShowEditModal(false);
-      setError("");
+      if (mounted) {
+        onEdit(data);
+        setShowEditModal(false);
+        setError("");
+      }
     } catch (err) {
-      if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
-      } else {
-        setError("Failed to update folder name");
+      if (mounted) {
+        console.log("Edit error:", err.response?.data);
+        if (err.response?.data?.detail) {
+          setError(err.response.data.detail);
+        } else {
+          setError("Failed to update folder name");
+        }
       }
     }
   };
 
   const handleDelete = async () => {
     try {
-      const response = await axiosReq.delete(`/folders/${folder.id}/`);
-      if (response.status === 204 || response.status === 200) {
+      await axiosReq.delete(`/folders/${folder.id}/`);
+      if (mounted) {
         onDelete(folder.id);
         setShowDeleteModal(false);
       }
     } catch (err) {
       console.log("Delete error:", err);
-      // If we get a 404, the folder is already gone
-      if (err.response?.status === 404) {
-        onDelete(folder.id);
-        setShowDeleteModal(false);
-      }
     }
   };
 
