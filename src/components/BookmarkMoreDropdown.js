@@ -23,11 +23,18 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
 
   const handleDelete = async () => {
     try {
+      // Get the post and folder IDs from the bookmark
+      console.log("Full bookmark object:", bookmark);
+      console.log("Attempting to delete bookmark with ID:", bookmark.id);
+      
+      // Try with the full URL path
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
       onDelete();
       setShowDeleteModal(false);
     } catch (err) {
-      console.log("Delete error:", err);
+      console.log("Full error object:", err);
+      console.log("Error response:", err.response?.data);
+      console.log("Status code:", err.response?.status);
     }
   };
 
