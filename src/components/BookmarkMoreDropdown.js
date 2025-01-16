@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
@@ -20,21 +20,12 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
 
 const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [mounted, setMounted] = useState(true);
-
-  useEffect(() => {
-    return () => {
-      setMounted(false);
-    };
-  }, []);
 
   const handleDelete = async () => {
     try {
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
-      if (mounted) {
-        onDelete();
-        setShowDeleteModal(false);
-      }
+      onDelete();
+      setShowDeleteModal(false);
     } catch (err) {
       console.log("Delete error:", err);
     }
@@ -86,80 +77,41 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [folderName, setFolderName] = useState(folder.name);
   const [error, setError] = useState("");
-  const [mounted, setMounted] = useState(true);
-
-  useEffect(() => {
-    return () => {
-      setMounted(false);
-    };
-  }, []);
 
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
-      // Get token
-      const token = localStorage.getItem("access_token");
-      console.log('Token available:', !!token);
+      // Log the request we're about to make
       console.log('Starting edit request for folder:', folder.id);
-
-      const { data } = await axiosReq.put(
-        `/folders/${folder.id}/`,
-        { name: folderName },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
       
-      if (mounted) {
-        console.log('Edit successful:', data);
-        onEdit(data);
-        setShowEditModal(false);
-        setError("");
-      }
+      const { data } = await axiosReq.put(`/folders/${folder.id}/`, {
+        name: folderName,
+      });
+      
+      console.log('Edit successful:', data);
+      onEdit(data);
+      setShowEditModal(false);
+      setError("");
     } catch (err) {
-      if (mounted) {
-        console.log("Edit error:", {
-          status: err.response?.status,
-          data: err.response?.data,
-          headers: err.response?.headers,
-          url: err.config?.url
-        });
-        if (err.response?.data?.detail) {
-          setError(err.response.data.detail);
-        } else {
-          setError("Failed to update folder name");
-        }
+      console.log("Edit error:", err.response?.data);
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError("Failed to update folder name");
       }
     }
   };
 
   const handleDelete = async () => {
     try {
-      // Get token
-      const token = localStorage.getItem("access_token");
-      console.log('Token available:', !!token);
       console.log('Starting delete request for folder:', folder.id);
-
-      await axiosReq.delete(`/folders/${folder.id}/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
       
-      if (mounted) {
-        onDelete(folder.id);
-        setShowDeleteModal(false);
-      }
+      await axiosReq.delete(`/folders/${folder.id}/`);
+      
+      onDelete(folder.id);
+      setShowDeleteModal(false);
     } catch (err) {
-      console.log("Delete error:", {
-        status: err.response?.status,
-        data: err.response?.data,
-        headers: err.response?.headers,
-        url: err.config?.url
-      });
+      console.log("Delete error:", err.response?.data);
     }
   };
 
