@@ -24,40 +24,31 @@ const FolderBookmarksPage = () => {
   // Get current user context for authentication
   const currentUser = useCurrentUser();
 
-  useEffect(() => {
-    /**
-     * Fetches bookmarks from the API with proper authentication
-     * Includes error handling and loading states
-     */
-    const fetchBookmarks = async () => {
-      try {
-        setHasLoaded(false);
-        // Verify authentication token exists
-        const token = localStorage.getItem("access_token");
-        if (!token) {
-          setError("Please log in to view bookmarks");
-          setHasLoaded(true);
-          return;
-        }
-
-        // Make authenticated request to get bookmarks
-        const { data } = await axiosReq.get(`/folders/${folder_id}/bookmarks/`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        console.log('Fetched bookmarks:', data);  // Debug log
-        setBookmarks(data);
-        setError(null);
-      } catch (err) {
-        // Set error message for user feedback
-        setError(err.response?.data?.detail || "Failed to load bookmarks");
-      } finally {
+  const fetchBookmarks = async () => {
+    try {
+      setHasLoaded(false);
+      // Verify authentication token exists
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        setError("Please log in to view bookmarks");
         setHasLoaded(true);
+        return;
       }
-    };
 
-    // Only fetch bookmarks if user is authenticated
+      // Make authenticated request to get bookmarks
+      const { data } = await axiosReq.get(`/folders/${folder_id}/bookmarks/`);
+      console.log("Fetched bookmarks:", data);  // Debug log
+      setBookmarks(data);
+      setError(null);
+    } catch (err) {
+      // Set error message for user feedback
+      setError(err.response?.data?.detail || "Failed to load bookmarks");
+    } finally {
+      setHasLoaded(true);
+    }
+  };
+
+  useEffect(() => {
     if (currentUser) {
       fetchBookmarks();
     }
@@ -66,28 +57,14 @@ const FolderBookmarksPage = () => {
   /**
    * Handles removing a bookmark from the folder
    */
-  const handleRemoveBookmark = async (bookmarkId) => {
+  const handleRemoveBookmark = async (bookmark) => {
     try {
-      console.log('Attempting to delete bookmark with ID:', bookmarkId);
-      console.log('Current bookmarks state:', bookmarks);
-      
-      // Log the specific bookmark we're trying to delete
-      const bookmarkToDelete = bookmarks.results.find(b => b.id === bookmarkId);
-      console.log('Found bookmark to delete:', bookmarkToDelete);
-
-      await axiosReq.delete(`/bookmarks/${bookmarkId}/`);
-      
-      setBookmarks(prevBookmarks => {
-        const updatedBookmarks = {
-          ...prevBookmarks,
-          results: prevBookmarks.results.filter(bookmark => bookmark.id !== bookmarkId),
-        };
-        console.log('Updated bookmarks state:', updatedBookmarks);
-        return updatedBookmarks;
-      });
+      console.log("Deleting bookmark:", bookmark);
+      await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
+      await fetchBookmarks();  // Refresh the bookmarks list
+      setError(null);
     } catch (err) {
-      console.log('Delete error:', err);
-      console.log('Error response:', err.response);
+      console.log("Delete error:", err);
       setError("Failed to remove bookmark");
     }
   };
@@ -111,10 +88,7 @@ const FolderBookmarksPage = () => {
                 <div className={styles.BookmarkActions}>
                   <BookmarkDropdown
                     bookmark={bookmark}
-                    onDelete={() => {
-                      console.log('Bookmark being passed to delete:', bookmark);
-                      handleRemoveBookmark(bookmark.id);
-                    }}
+                    onDelete={() => handleRemoveBookmark(bookmark)}
                   />
                 </div>
               </div>
