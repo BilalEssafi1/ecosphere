@@ -12,7 +12,6 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
     className="fas fa-ellipsis-v"
     ref={ref}
     onClick={(e) => {
-      e.stopPropagation();
       e.preventDefault();
       onClick(e);
     }}
@@ -42,10 +41,7 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
         >
           <Dropdown.Item
             className={styles.DropdownItem}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDeleteModal(true);
-            }}
+            onClick={() => setShowDeleteModal(true)}
             aria-label="delete-bookmark"
           >
             <i className="fas fa-trash-alt" /> Delete
@@ -85,19 +81,14 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
-      // Log the request we're about to make
-      console.log('Starting edit request for folder:', folder.id);
-      
-      const { data } = await axiosReq.put(`/folders/${folder.id}/`, {
-        name: folderName,
-      });
-      
-      console.log('Edit successful:', data);
+      const formData = new FormData();
+      formData.append('name', folderName);
+
+      const { data } = await axiosReq.put(`/folders/${folder.id}/`, formData);
       onEdit(data);
       setShowEditModal(false);
       setError("");
     } catch (err) {
-      console.log("Edit error:", err.response?.data);
       if (err.response?.data?.detail) {
         setError(err.response.data.detail);
       } else {
@@ -108,14 +99,18 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
 
   const handleDelete = async () => {
     try {
-      console.log('Starting delete request for folder:', folder.id);
-      
-      await axiosReq.delete(`/folders/${folder.id}/`);
-      
-      onDelete(folder.id);
-      setShowDeleteModal(false);
+      const response = await axiosReq.delete(`/folders/${folder.id}/`);
+      if (response.status === 204 || response.status === 200) {
+        onDelete(folder.id);
+        setShowDeleteModal(false);
+      }
     } catch (err) {
-      console.log("Delete error:", err.response?.data);
+      console.log("Delete error:", err);
+      // If we get a 404, the folder is already gone
+      if (err.response?.status === 404) {
+        onDelete(folder.id);
+        setShowDeleteModal(false);
+      }
     }
   };
 
@@ -129,20 +124,14 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
         >
           <Dropdown.Item
             className={styles.DropdownItem}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowEditModal(true);
-            }}
+            onClick={() => setShowEditModal(true)}
             aria-label="edit-folder"
           >
             <i className="fas fa-edit" /> Edit folder
           </Dropdown.Item>
           <Dropdown.Item
             className={styles.DropdownItem}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDeleteModal(true);
-            }}
+            onClick={() => setShowDeleteModal(true)}
             aria-label="delete-folder"
           >
             <i className="fas fa-trash-alt" /> Delete folder
