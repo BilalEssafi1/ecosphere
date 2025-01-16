@@ -24,7 +24,7 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const handleDelete = async () => {
     try {
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
-      onDelete(bookmark.id);
+      onDelete();
       setShowDeleteModal(false);
     } catch (err) {
       console.log("Delete error:", err);

@@ -64,18 +64,18 @@ const FolderBookmarksPage = () => {
   }, [folder_id, currentUser]);
 
   /**
-   * Handles removing a bookmark from the folder and updates state
+   * Handles removing a bookmark from the folder
    */
-  const handleRemoveBookmark = async (bookmark) => {
+  const handleRemoveBookmark = async (bookmarkId) => {
     try {
-      await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
+      await axiosReq.delete(`/bookmarks/${bookmarkId}/`);
       setBookmarks(prevBookmarks => ({
         ...prevBookmarks,
-        results: prevBookmarks.results.filter(b => b.id !== bookmark.id)
+        results: prevBookmarks.results.filter(bookmark => bookmark.id !== bookmarkId),
       }));
     } catch (err) {
+      console.log('Delete error:', err);
       setError("Failed to remove bookmark");
-      console.log("Delete error:", err);
     }
   };
 
@@ -98,7 +98,7 @@ const FolderBookmarksPage = () => {
                 <div className={styles.BookmarkActions}>
                   <BookmarkDropdown
                     bookmark={bookmark}
-                    onDelete={() => handleRemoveBookmark(bookmark)}
+                    onDelete={() => handleRemoveBookmark(bookmark.id)}
                   />
                 </div>
               </div>
