@@ -46,7 +46,7 @@ const FolderBookmarksPage = () => {
             Authorization: `Bearer ${token}`
           }
         });
-        
+        console.log('Fetched bookmarks:', data);  // Debug log
         setBookmarks(data);
         setError(null);
       } catch (err) {
@@ -68,13 +68,26 @@ const FolderBookmarksPage = () => {
    */
   const handleRemoveBookmark = async (bookmarkId) => {
     try {
+      console.log('Attempting to delete bookmark with ID:', bookmarkId);
+      console.log('Current bookmarks state:', bookmarks);
+      
+      // Log the specific bookmark we're trying to delete
+      const bookmarkToDelete = bookmarks.results.find(b => b.id === bookmarkId);
+      console.log('Found bookmark to delete:', bookmarkToDelete);
+
       await axiosReq.delete(`/bookmarks/${bookmarkId}/`);
-      setBookmarks(prevBookmarks => ({
-        ...prevBookmarks,
-        results: prevBookmarks.results.filter(bookmark => bookmark.id !== bookmarkId),
-      }));
+      
+      setBookmarks(prevBookmarks => {
+        const updatedBookmarks = {
+          ...prevBookmarks,
+          results: prevBookmarks.results.filter(bookmark => bookmark.id !== bookmarkId),
+        };
+        console.log('Updated bookmarks state:', updatedBookmarks);
+        return updatedBookmarks;
+      });
     } catch (err) {
       console.log('Delete error:', err);
+      console.log('Error response:', err.response);
       setError("Failed to remove bookmark");
     }
   };
@@ -98,7 +111,10 @@ const FolderBookmarksPage = () => {
                 <div className={styles.BookmarkActions}>
                   <BookmarkDropdown
                     bookmark={bookmark}
-                    onDelete={() => handleRemoveBookmark(bookmark.id)}
+                    onDelete={() => {
+                      console.log('Bookmark being passed to delete:', bookmark);
+                      handleRemoveBookmark(bookmark.id);
+                    }}
                   />
                 </div>
               </div>
