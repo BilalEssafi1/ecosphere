@@ -12,6 +12,7 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
     className="fas fa-ellipsis-v"
     ref={ref}
     onClick={(e) => {
+      e.stopPropagation();
       e.preventDefault();
       onClick(e);
     }}
@@ -41,7 +42,10 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
         >
           <Dropdown.Item
             className={styles.DropdownItem}
-            onClick={() => setShowDeleteModal(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteModal(true);
+            }}
             aria-label="delete-bookmark"
           >
             <i className="fas fa-trash-alt" /> Delete
@@ -125,14 +129,20 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
         >
           <Dropdown.Item
             className={styles.DropdownItem}
-            onClick={() => setShowEditModal(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowEditModal(true);
+            }}
             aria-label="edit-folder"
           >
             <i className="fas fa-edit" /> Edit folder
           </Dropdown.Item>
           <Dropdown.Item
             className={styles.DropdownItem}
-            onClick={() => setShowDeleteModal(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteModal(true);
+            }}
             aria-label="delete-folder"
           >
             <i className="fas fa-trash-alt" /> Delete folder
