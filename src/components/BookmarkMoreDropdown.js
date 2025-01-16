@@ -97,18 +97,36 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
-      const { data } = await axiosReq.put(`/folders/${folder.id}/`, {
-        name: folderName,
-        owner: folder.owner
-      });
+      // Get token
+      const token = localStorage.getItem("access_token");
+      console.log('Token available:', !!token);
+      console.log('Starting edit request for folder:', folder.id);
+
+      const { data } = await axiosReq.put(
+        `/folders/${folder.id}/`,
+        { name: folderName },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
       if (mounted) {
+        console.log('Edit successful:', data);
         onEdit(data);
         setShowEditModal(false);
         setError("");
       }
     } catch (err) {
       if (mounted) {
-        console.log("Edit error:", err.response?.data);
+        console.log("Edit error:", {
+          status: err.response?.status,
+          data: err.response?.data,
+          headers: err.response?.headers,
+          url: err.config?.url
+        });
         if (err.response?.data?.detail) {
           setError(err.response.data.detail);
         } else {
@@ -120,13 +138,28 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
 
   const handleDelete = async () => {
     try {
-      await axiosReq.delete(`/folders/${folder.id}/`);
+      // Get token
+      const token = localStorage.getItem("access_token");
+      console.log('Token available:', !!token);
+      console.log('Starting delete request for folder:', folder.id);
+
+      await axiosReq.delete(`/folders/${folder.id}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
       if (mounted) {
         onDelete(folder.id);
         setShowDeleteModal(false);
       }
     } catch (err) {
-      console.log("Delete error:", err);
+      console.log("Delete error:", {
+        status: err.response?.status,
+        data: err.response?.data,
+        headers: err.response?.headers,
+        url: err.config?.url
+      });
     }
   };
 
