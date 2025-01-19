@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
@@ -6,7 +6,6 @@ import Form from "react-bootstrap/Form";
 import styles from "../styles/MoreDropdown.module.css";
 import { axiosReq } from "../api/axiosDefaults";
 
-// Three dots toggle component
 const ThreeDots = React.forwardRef(({ onClick }, ref) => (
   <i
     className="fas fa-ellipsis-v"
@@ -18,17 +17,10 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
   />
 ));
 
-/**
- * Dropdown component for managing individual bookmarks
- */
 const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState("");
 
-  /**
-   * Handles the deletion of a bookmark
-   * Updates UI and makes API call
-   */
   const handleDelete = async () => {
     try {
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
@@ -36,8 +28,8 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
       setShowDeleteModal(false);
       setError("");
     } catch (err) {
-      setError("Failed to delete bookmark");
       console.error("Delete error:", err);
+      setError("Failed to delete bookmark. Please try again.");
     }
   };
 
@@ -71,10 +63,7 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
-          <Button
-            variant="danger"
-            onClick={handleDelete}
-          >
+          <Button variant="danger" onClick={handleDelete}>
             Remove
           </Button>
         </Modal.Footer>
@@ -83,52 +72,44 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
   );
 };
 
-/**
- * Dropdown component for managing bookmark folders
- */
-const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
+const BookmarkFolderDropdown = ({ folder, setFolders }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [folderName, setFolderName] = useState(folder.name);
   const [error, setError] = useState("");
 
-  /**
-   * Handles editing folder name
-   * Makes API call and updates UI
-   */
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
       const formData = new FormData();
-      formData.append('name', folderName);
+      formData.append('name', folderName.trim());
 
       const { data } = await axiosReq.put(`/folders/${folder.id}/`, formData);
-      onEdit(data);
+      setFolders(prevFolders => ({
+        ...prevFolders,
+        results: prevFolders.results.map(f =>
+          f.id === folder.id ? { ...f, name: data.name } : f
+        ),
+      }));
       setShowEditModal(false);
       setError("");
     } catch (err) {
+      console.error("Edit error:", err);
       setError(err.response?.data?.detail || "Failed to update folder name");
     }
   };
 
-  /**
-   * Handles folder deletion
-   * Makes API call and updates UI
-   */
   const handleDelete = async () => {
     try {
       await axiosReq.delete(`/folders/${folder.id}/`);
-      onDelete(folder.id);
+      setFolders(prevFolders => ({
+        ...prevFolders,
+        results: prevFolders.results.filter(f => f.id !== folder.id),
+      }));
       setShowDeleteModal(false);
-      setError("");
     } catch (err) {
-      if (err.response?.status === 404) {
-        onDelete(folder.id);
-        setShowDeleteModal(false);
-      } else {
-        setError("Failed to delete folder");
-        console.error("Delete error:", err);
-      }
+      console.error("Delete error:", err);
+      setError("Failed to delete folder");
     }
   };
 
@@ -157,13 +138,13 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
         </Dropdown.Menu>
       </Dropdown>
 
-      {/* Edit Modal */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Edit Folder Name</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleEdit}>
           <Modal.Body>
+            {error && <div className="alert alert-danger">{error}</div>}
             <Form.Group>
               <Form.Label>Folder Name</Form.Label>
               <Form.Control
@@ -192,7 +173,6 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
         </Form>
       </Modal>
 
-      {/* Delete Modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Delete Folder</Modal.Title>
