@@ -18,15 +18,26 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
   />
 ));
 
+/**
+ * Dropdown component for managing individual bookmarks
+ */
 const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [error, setError] = useState("");
 
+  /**
+   * Handles the deletion of a bookmark
+   * Updates UI and makes API call
+   */
   const handleDelete = async () => {
     try {
+      await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
       onDelete();
       setShowDeleteModal(false);
+      setError("");
     } catch (err) {
-      console.log("Delete error:", err);
+      setError("Failed to delete bookmark");
+      console.error("Delete error:", err);
     }
   };
 
@@ -34,7 +45,7 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
     <>
       <Dropdown className="ml-auto" drop="left">
         <Dropdown.Toggle as={ThreeDots} />
-        <Dropdown.Menu 
+        <Dropdown.Menu
           className="text-center"
           popperConfig={{ strategy: "fixed" }}
         >
@@ -53,14 +64,15 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
           <Modal.Title>Remove Bookmark</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {error && <div className="alert alert-danger">{error}</div>}
           Are you sure you want to remove this bookmark?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={handleDelete}
           >
             Remove
@@ -71,12 +83,19 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
   );
 };
 
+/**
+ * Dropdown component for managing bookmark folders
+ */
 const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [folderName, setFolderName] = useState(folder.name);
   const [error, setError] = useState("");
 
+  /**
+   * Handles editing folder name
+   * Makes API call and updates UI
+   */
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
@@ -88,27 +107,27 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
       setShowEditModal(false);
       setError("");
     } catch (err) {
-      if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
-      } else {
-        setError("Failed to update folder name");
-      }
+      setError(err.response?.data?.detail || "Failed to update folder name");
     }
   };
 
+  /**
+   * Handles folder deletion
+   * Makes API call and updates UI
+   */
   const handleDelete = async () => {
     try {
-      const response = await axiosReq.delete(`/folders/${folder.id}/`);
-      if (response.status === 204 || response.status === 200) {
-        onDelete(folder.id);
-        setShowDeleteModal(false);
-      }
+      await axiosReq.delete(`/folders/${folder.id}/`);
+      onDelete(folder.id);
+      setShowDeleteModal(false);
+      setError("");
     } catch (err) {
-      console.log("Delete error:", err);
-      // If we get a 404, the folder is already gone
       if (err.response?.status === 404) {
         onDelete(folder.id);
         setShowDeleteModal(false);
+      } else {
+        setError("Failed to delete folder");
+        console.error("Delete error:", err);
       }
     }
   };
@@ -162,8 +181,8 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
             <Button variant="secondary" onClick={() => setShowEditModal(false)}>
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               type="submit"
               disabled={!folderName.trim()}
             >
@@ -179,6 +198,7 @@ const BookmarkFolderDropdown = ({ folder, onEdit, onDelete }) => {
           <Modal.Title>Delete Folder</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {error && <div className="alert alert-danger">{error}</div>}
           Are you sure you want to delete "{folder.name}"? This will also delete all bookmarks within the folder.
         </Modal.Body>
         <Modal.Footer>
