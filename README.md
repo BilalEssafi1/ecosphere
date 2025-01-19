@@ -172,8 +172,12 @@ By prioritizing user needs and following an agile methodology, I aimed to delive
 
 ## Homepage
 - Navbar: User-friendly navigation bar is present on all pages and it adapts to the user's authentication status (logged in or not.) Logged-in users have access to Post, like, comment, follow, bookmark and profile features. 
-- Home Page: Displays recent posts, popular profiles, number of likes and comments as well as a searchbar. 
-![Screenshot website design](src/assets/homepage-ecosphere.png)
+- Homepage: Welcomes users to Ecosphere and outlines the platform's purpose for sustainable living, encouraging user registration through clear feature benefits.
+![Screenshot homepage design](src/assets/welcome-page.png)
+
+## Posts
+- Posts: Displays recent posts, popular profiles, number of likes and comments as well as a searchbar. 
+![Screenshot website design](src/assets/posts.png)
 
 ## User Registration and Profile
 - Account Creation: Users can register to like posts, comment on posts, add own posts or follow members they like.
@@ -212,6 +216,10 @@ By prioritizing user needs and following an agile methodology, I aimed to delive
 ![Screenshot bookmark creation design](src/assets/bookmarks-creation.png)
 - Bookmarked Folders Feed: Allows users to access posts saved in self created folderrs
 ![Screenshot bookmark folder design](src/assets/bookmarks-folders.png)
+- Edit Bookmark Folder: Allows uers to edit folder name or delete bookmark folder
+![Screenshot bookmark folder design](src/assets/edit-bookmark.png)
+- Delete Bookmark: Allows users to delete individual bookmarks within the associated bookmark folder.
+![Screenshot bookmark folder design](src/assets/delete-bookmark.png)
 
 ## Responsive Design
 The website is mobile-friendly and responsive across all devices, optimized with Bootstrap for consistent styling.
@@ -223,7 +231,6 @@ The website is mobile-friendly and responsive across all devices, optimized with
 - Add a more custom 404 pages
 - Add self-service forgot password feature via email verification
 - Improve performance on the side by implementing stricter image sizing rules
-- Add bookmark editing functionalities to rename a bookmark or also delete it
 - Add video upload functionality to allow users to upload different types of assets
 
 # Reusable Components
@@ -254,6 +261,28 @@ The website is mobile-friendly and responsive across all devices, optimized with
 - Purpose: Handles loading states and placeholder content
 - Usage: Loading states, empty states
 
+## Home Component
+- Purpose: Landing page providing platform introduction and feature overview
+    - Features:
+        - Clear value proposition
+        - User registration incentivization
+        - Direct access to content via View Posts
+
+## BookmarkFolderModal Component
+- Purpose: Modal interface for organizing bookmarked posts
+    - Features:
+        - Folder creation functionality
+        - Folder selection for bookmarks
+        - Loading state handling
+        - Error message display
+
+## BookmarkMoreDropdown Component
+- Purpose: Manages folder and bookmark operations
+    - Features:
+        - Folder editing/deletion
+        - Bookmark removal functionality
+        - Confirmation modals
+        - Error state handling
 
 # Testing
 
@@ -297,10 +326,11 @@ The website is mobile-friendly and responsive across all devices, optimized with
 | Liked Post Feed | This was tested by clicking on Feed in the navigation bar and checking that the user ends up on the right landing page. | The user is redirected to the correct landing page where they now only see posts they liked. | Pass |
 | Create a Bookmark | This was tested by clicking on the bookmark icon below and validating that the user is being redirected to a folder creation form that allows them to create a new folder or store the post under an existing one. | The user is redirected to a folder creation form after clicking on the bookmark icon below the post, where they can create a new bookmark or store the post under an existing folder when clicking on the existing folder. | Pass |
 | Bookmark Feed | This was tested by clicking on the bookmark icon in the navigation bar and checking that the user ends up on the right bookmark folders landing page. | The user is redirected to a landing page where they can find all created folders as well as the number of posts they have saved under them. Once they click on the folder, it shows them all the bookmarked posts. | Pass |
+| Edit Bookmark Folder | This was tested by clicking on the three dots on the right of the bookmark folder and clicking on "Edift folder" or "Delete folder"  | The user is either able to change the folder name or delete the folder| Pass | 
+| Delete Bookmark | This was tested by clicking on the folder in which bookmarks wer saved and then clicking on the three dots on the right corner of the to be deleted bookmark and clicking on "Delete" | The bookmark was deleted from the bookmark folder| Pass | 
 | Manage User Profile | This was tested by logging in with a valid user account and clicking on the Profile icon in the navigation bar and checking that the user ends up on the user profile where they can edit or delete their account, change the username, and the password. | The user is able to edit the profile, like uploading a new image, changing the bio, deleting the account, changing the username, and the password. | Pass | 
 | Filter Posts with Searchbar | This was tested by logging in with a valid user account and typing in a keyword into the searchbar that is featured on the homepage, which then filters through the posts to find matches. | The user is able to add keywords to filter through the posts and only get results that contain the relevant keyword. | Pass | 
 | Logout | This was tested by clicking on the "Sign Out" button to log out from the website. | The user is redirected to the sign-in page after clicking on "Sign Out." | Pass | 
-
 
 # Bugs
 
