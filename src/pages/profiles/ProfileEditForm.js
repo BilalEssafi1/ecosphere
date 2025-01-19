@@ -7,7 +7,8 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import Alert from "react-bootstrap/Alert";
-import { axiosReq, axiosRes } from "../../api/axiosDefaults";
+import Modal from "react-bootstrap/Modal";
+import { axiosReq } from "../../api/axiosDefaults";
 import {
   useCurrentUser,
   useSetCurrentUser,
@@ -15,36 +16,45 @@ import {
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 
+/**
+ * Component for editing user profile information
+ * Handles profile data updates and account deletion
+ */
 const ProfileEditForm = () => {
-  // Hooks to access the current user and their profile, update state, and navigate history
+  // Get current user context and setter for updates
   const currentUser = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
   const { id } = useParams();
   const history = useHistory();
   const imageFile = useRef();
 
-  // State to manage profile data
+  // State for managing the delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // State for managing profile data and errors
   const [profileData, setProfileData] = useState({
     name: "",
     content: "",
     image: "",
   });
-  const { name, content, image } = profileData; // Destructure profile data for easier access
-
-  // State to manage errors (e.g., validation or API errors)
+  const { name, content, image } = profileData;
   const [errors, setErrors] = useState({});
 
-  // Fetch and populate profile data on component mount
   useEffect(() => {
+    /**
+     * Handles initial component mount
+     * Fetches profile data if user is authorized
+     */
     const handleMount = async () => {
-      // Ensure the current user is authorized to edit this profile
+      // Check if current user owns this profile
       if (currentUser?.profile_id?.toString() === id) {
         try {
-          // Fetch the profile data
           const { data } = await axiosReq.get(`/profiles/${id}/`);
           const { name, content, image } = data;
           setProfileData({ name, content, image });
         } catch (err) {
+          console.log(err);
           history.push("/");
         }
       } else {
@@ -55,7 +65,9 @@ const ProfileEditForm = () => {
     handleMount();
   }, [currentUser, history, id]);
 
-  // Handle changes to form inputs
+  /**
+   * Handles changes to form input fields
+   */
   const handleChange = (event) => {
     setProfileData({
       ...profileData,
@@ -63,51 +75,50 @@ const ProfileEditForm = () => {
     });
   };
 
-  // Handle form submission for updating profile
+  /**
+   * Handles form submission for profile updates
+   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData();
     formData.append("name", name);
     formData.append("content", content);
 
-    // Add image file if a new one is selected
     if (imageFile?.current?.files[0]) {
       formData.append("image", imageFile?.current?.files[0]);
     }
 
     try {
-      // Update profile via PUT request
       const { data } = await axiosReq.put(`/profiles/${id}/`, formData);
-      // Update the current user's profile image in context
       setCurrentUser((currentUser) => ({
         ...currentUser,
         profile_image: data.image,
       }));
       history.goBack();
     } catch (err) {
+      console.log(err);
       setErrors(err.response?.data);
     }
   };
 
-  // Handle account deletion
+  /**
+   * Handles account deletion
+   * Shows loading state and handles errors
+   */
   const handleDelete = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete your account? This action cannot be undone."
-      )
-    ) {
-      try {
-        // Delete the account via DELETE request
-        await axiosRes.delete(`/profiles/${id}/`);
-        setCurrentUser(null);
-        history.push("/");
-      } catch (err) {
-        setErrors({ delete: ["Something went wrong. Please try again."] });
-      }
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await axiosReq.delete(`/profiles/${id}/`);
+      setCurrentUser(null);
+      history.push("/");
+    } catch (err) {
+      setErrors({ delete: ["Failed to delete account. Please try again."] });
+      setIsDeleting(false);
     }
   };
 
-  // Fields for text inputs and buttons (used in both mobile and desktop layouts)
+  // Form fields for text inputs and buttons
   const textFields = (
     <>
       <Form.Group>
@@ -121,41 +132,34 @@ const ProfileEditForm = () => {
         />
       </Form.Group>
 
-      {/* Display content validation errors */}
       {errors?.content?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
           {message}
         </Alert>
       ))}
 
-      {/* Cancel button */}
       <Button
         className={`${btnStyles.Button} ${btnStyles.Blue}`}
         onClick={() => history.goBack()}
       >
         cancel
       </Button>
-
-      {/* Save button */}
       <Button className={`${btnStyles.Button} ${btnStyles.Blue}`} type="submit">
         save
       </Button>
-
-      {/* Delete account button */}
       <Button
         className={`${btnStyles.Button} ${btnStyles.Danger}`}
-        onClick={handleDelete}
+        onClick={() => setShowDeleteModal(true)}
       >
-        delete account
+        Delete account
       </Button>
     </>
   );
 
-  // Main return with layout and functionality
   return (
     <Form onSubmit={handleSubmit}>
       <Row>
-        {/* Left column (profile image and form for smaller screens) */}
+        {/* Left column - Profile image */}
         <Col className="py-2 p-0 p-md-2 text-center" md={7} lg={6}>
           <Container className={appStyles.Content}>
             <Form.Group>
@@ -164,14 +168,11 @@ const ProfileEditForm = () => {
                   <Image src={image} fluid />
                 </figure>
               )}
-              {/* Display image upload validation errors */}
               {errors?.image?.map((message, idx) => (
                 <Alert variant="warning" key={idx}>
                   {message}
                 </Alert>
               ))}
-
-              {/* Change image button */}
               <div>
                 <Form.Label
                   className={`${btnStyles.Button} ${btnStyles.Blue} btn my-auto`}
@@ -180,7 +181,6 @@ const ProfileEditForm = () => {
                   Change the image
                 </Form.Label>
               </div>
-              {/* Image upload input */}
               <Form.File
                 id="image-upload"
                 ref={imageFile}
@@ -195,16 +195,47 @@ const ProfileEditForm = () => {
                 }}
               />
             </Form.Group>
-            {/* Mobile layout: Display text fields under the image */}
+            {/* Display text fields on smaller screens */}
             <div className="d-md-none">{textFields}</div>
           </Container>
         </Col>
-
-        {/* Right column (text fields for larger screens) */}
+        {/* Right column - Text fields */}
         <Col md={5} lg={6} className="d-none d-md-block p-0 p-md-2 text-center">
           <Container className={appStyles.Content}>{textFields}</Container>
         </Col>
       </Row>
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Account</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {errors?.delete?.map((message, idx) => (
+            <Alert variant="danger" key={idx}>
+              {message}
+            </Alert>
+          ))}
+          <p>Are you sure you want to delete your account?</p>
+          <p className="text-danger">This action cannot be undone.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDeleteModal(false)}
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Form>
   );
 };
