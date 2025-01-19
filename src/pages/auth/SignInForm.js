@@ -73,7 +73,7 @@ function SignInForm() {
      // Update user context and redirect
      setCurrentUser(data.user);
      setTokenTimestamp(data);
-     history.push("/");
+     history.push("/posts");
      
    } catch (err) {
      setErrors(err.response?.data || {
