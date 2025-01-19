@@ -6,6 +6,7 @@ import Form from "react-bootstrap/Form";
 import styles from "../styles/MoreDropdown.module.css";
 import { axiosReq } from "../api/axiosDefaults";
 
+// Three dots toggle component
 const ThreeDots = React.forwardRef(({ onClick }, ref) => (
   <i
     className="fas fa-ellipsis-v"
@@ -20,16 +21,22 @@ const ThreeDots = React.forwardRef(({ onClick }, ref) => (
 const BookmarkDropdown = ({ bookmark, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    setError("");
+
     try {
-      // Using the correct endpoint from your Django URLs
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
-      onDelete(bookmark.id);
+      onDelete();
       setShowDeleteModal(false);
     } catch (err) {
       console.error("Delete error:", err);
       setError("Failed to delete bookmark. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -60,11 +67,19 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
           Are you sure you want to remove this bookmark?
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowDeleteModal(false)}
+            disabled={isDeleting}
+          >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Remove
+          <Button 
+            variant="danger" 
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Removing..." : "Remove"}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -77,33 +92,55 @@ const BookmarkFolderDropdown = ({ folder, setFolders }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [folderName, setFolderName] = useState(folder.name);
   const [error, setError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleEdit = async (event) => {
     event.preventDefault();
+    if (isEditing || !folderName.trim()) return;
+
+    setIsEditing(true);
+    setError("");
+
     try {
+      const trimmedName = folderName.trim();
+      
+      // Check if name is unchanged
+      if (trimmedName === folder.name) {
+        setShowEditModal(false);
+        return;
+      }
+
       const response = await axiosReq.put(`/folders/${folder.id}/`, {
-        name: folderName.trim(),
+        name: trimmedName,
       });
 
-      setFolders(prevFolders => ({
-        ...prevFolders,
-        results: prevFolders.results.map(f =>
-          f.id === folder.id ? { ...f, name: response.data.name } : f
-        ),
-      }));
-      setShowEditModal(false);
-      setError("");
+      if (response.status === 200) {
+        setFolders(prevFolders => ({
+          ...prevFolders,
+          results: prevFolders.results.map(f =>
+            f.id === folder.id ? { ...f, name: response.data.name } : f
+          ),
+        }));
+        setShowEditModal(false);
+      }
     } catch (err) {
       console.error("Edit error:", err);
-      if (err.response?.status === 404) {
-        setError("Folder not found. Please refresh the page.");
+      if (err.response?.data?.detail === "A folder with this name already exists") {
+        setError("You already have a folder with this name. Please choose a different name.");
       } else {
         setError(err.response?.data?.detail || "Failed to update folder name");
       }
+    } finally {
+      setIsEditing(false);
     }
   };
 
   const handleDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    setError("");
+
     try {
       await axiosReq.delete(`/folders/${folder.id}/`);
       setFolders(prevFolders => ({
@@ -113,16 +150,32 @@ const BookmarkFolderDropdown = ({ folder, setFolders }) => {
       setShowDeleteModal(false);
     } catch (err) {
       console.error("Delete error:", err);
-      if (err.response?.status === 404) {
-        setFolders(prevFolders => ({
-          ...prevFolders,
-          results: prevFolders.results.filter(f => f.id !== folder.id),
-        }));
-        setShowDeleteModal(false);
-      } else {
+      try {
+        // Check if folder still exists
+        await axiosReq.get(`/folders/${folder.id}/`);
         setError("Failed to delete folder. Please try again.");
+      } catch (checkErr) {
+        if (checkErr.response?.status === 404) {
+          // Folder is gone, update UI
+          setFolders(prevFolders => ({
+            ...prevFolders,
+            results: prevFolders.results.filter(f => f.id !== folder.id),
+          }));
+          setShowDeleteModal(false);
+        } else {
+          setError("Failed to delete folder. Please try again.");
+        }
       }
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setShowEditModal(false);
+    setShowDeleteModal(false);
+    setError("");
+    setFolderName(folder.name);
   };
 
   return (
@@ -150,7 +203,8 @@ const BookmarkFolderDropdown = ({ folder, setFolders }) => {
         </Dropdown.Menu>
       </Dropdown>
 
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+      {/* Edit Modal */}
+      <Modal show={showEditModal} onHide={handleModalClose}>
         <Modal.Header closeButton>
           <Modal.Title>Edit Folder Name</Modal.Title>
         </Modal.Header>
@@ -171,34 +225,48 @@ const BookmarkFolderDropdown = ({ folder, setFolders }) => {
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            <Button 
+              variant="secondary" 
+              onClick={handleModalClose}
+              disabled={isEditing}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               type="submit"
-              disabled={!folderName.trim()}
+              disabled={!folderName.trim() || isEditing || folderName.trim() === folder.name}
             >
-              Save Changes
+              {isEditing ? "Saving..." : "Save Changes"}
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
 
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+      {/* Delete Modal */}
+      <Modal show={showDeleteModal} onHide={handleModalClose}>
         <Modal.Header closeButton>
           <Modal.Title>Delete Folder</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <div className="alert alert-danger">{error}</div>}
-          Are you sure you want to delete "{folder.name}"? This will also delete all bookmarks within the folder.
+          <p>Are you sure you want to delete "{folder.name}"?</p>
+          <p className="text-danger">This will also delete all bookmarks within the folder.</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+          <Button 
+            variant="secondary" 
+            onClick={handleModalClose}
+            disabled={isDeleting}
+          >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Delete
+          <Button 
+            variant="danger" 
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
           </Button>
         </Modal.Footer>
       </Modal>
