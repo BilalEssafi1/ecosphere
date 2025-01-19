@@ -9,25 +9,22 @@ import { useCurrentUser } from "../../contexts/CurrentUserContext";
 import { BookmarkDropdown } from "../../components/BookmarkMoreDropdown";
 
 /**
-* Displays all bookmarks within a specific folder
-* Handles authentication, loading states, and error handling
-*/
+ * Displays all bookmarks within a specific folder
+ * Handles bookmark removal and error states
+ */
 const FolderBookmarksPage = () => {
-  // Get folder ID from URL parameters
   const { folder_id } = useParams();
-  // State for storing bookmarks data
   const [bookmarks, setBookmarks] = useState({ results: [] });
-  // Loading state management
   const [hasLoaded, setHasLoaded] = useState(false);
-  // Error state management
   const [error, setError] = useState(null);
-  // Get current user context for authentication
   const currentUser = useCurrentUser();
 
+  /**
+   * Fetches bookmarks for the current folder
+   */
   const fetchBookmarks = async () => {
     try {
       setHasLoaded(false);
-      // Verify authentication token exists
       const token = localStorage.getItem("access_token");
       if (!token) {
         setError("Please log in to view bookmarks");
@@ -35,13 +32,10 @@ const FolderBookmarksPage = () => {
         return;
       }
 
-      // Make authenticated request to get bookmarks
       const { data } = await axiosReq.get(`/folders/${folder_id}/bookmarks/`);
-      console.log("Fetched bookmarks:", data);  // Debug log
       setBookmarks(data);
       setError(null);
     } catch (err) {
-      // Set error message for user feedback
       setError(err.response?.data?.detail || "Failed to load bookmarks");
     } finally {
       setHasLoaded(true);
@@ -56,25 +50,26 @@ const FolderBookmarksPage = () => {
 
   /**
    * Handles removing a bookmark from the folder
+   * Updates UI immediately and makes API call
    */
   const handleRemoveBookmark = async (bookmark) => {
     try {
-      console.log("Deleting bookmark:", bookmark);
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
-      await fetchBookmarks();  // Refresh the bookmarks list
+      setBookmarks(prevBookmarks => ({
+        ...prevBookmarks,
+        results: prevBookmarks.results.filter(b => b.id !== bookmark.id)
+      }));
       setError(null);
     } catch (err) {
-      console.log("Delete error:", err);
       setError("Failed to remove bookmark");
+      console.error("Delete error:", err);
     }
   };
 
   return (
     <div className={styles.FolderBookmarksPage}>
-      {/* Display any error messages */}
       {error && <div className={styles.ErrorMessage}>{error}</div>}
-
-      {/* Conditional rendering based on loading and data states */}
+      
       {hasLoaded ? (
         <>
           {bookmarks?.results?.length ? (
