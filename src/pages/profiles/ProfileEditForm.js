@@ -17,22 +17,21 @@ import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 
 /**
- * Component for editing user profile information
- * Handles profile data updates and account deletion
+ * ProfileEditForm component
+ * Handles editing and deletion of user profiles
+ * Includes image upload, bio editing, and account deletion
  */
 const ProfileEditForm = () => {
-  // Get current user context and setter for updates
+  // Get current user context and setter
   const currentUser = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
   const { id } = useParams();
   const history = useHistory();
   const imageFile = useRef();
 
-  // State for managing the delete confirmation modal
+  // State for managing profile data and UI states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  // State for managing profile data and errors
   const [profileData, setProfileData] = useState({
     name: "",
     content: "",
@@ -43,11 +42,11 @@ const ProfileEditForm = () => {
 
   useEffect(() => {
     /**
-     * Handles initial component mount
+     * Handles component mount
      * Fetches profile data if user is authorized
      */
     const handleMount = async () => {
-      // Check if current user owns this profile
+      // Verify current user owns this profile
       if (currentUser?.profile_id?.toString() === id) {
         try {
           const { data } = await axiosReq.get(`/profiles/${id}/`);
@@ -58,6 +57,7 @@ const ProfileEditForm = () => {
           history.push("/");
         }
       } else {
+        // Redirect if unauthorized
         history.push("/");
       }
     };
@@ -67,6 +67,7 @@ const ProfileEditForm = () => {
 
   /**
    * Handles changes to form input fields
+   * Updates profileData state with new values
    */
   const handleChange = (event) => {
     setProfileData({
@@ -77,6 +78,7 @@ const ProfileEditForm = () => {
 
   /**
    * Handles form submission for profile updates
+   * Sends updated profile data to the server
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -103,22 +105,29 @@ const ProfileEditForm = () => {
 
   /**
    * Handles account deletion
-   * Shows loading state and handles errors
+   * Removes user profile, clears authentication, and redirects to signin
    */
   const handleDelete = async () => {
     if (isDeleting) return;
     setIsDeleting(true);
     try {
       await axiosReq.delete(`/profiles/${id}/`);
+      // Clear all user data and authentication
       setCurrentUser(null);
-      history.push("/");
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      // Redirect to signin page
+      history.push("/signin");
     } catch (err) {
-      setErrors({ delete: ["Failed to delete account. Please try again."] });
+      console.error("Delete error:", err);
+      setErrors({ 
+        delete: [err.response?.data?.detail || "Failed to delete account. Please try again."] 
+      });
       setIsDeleting(false);
     }
   };
 
-  // Form fields for text inputs and buttons
+  // Text fields for bio and buttons
   const textFields = (
     <>
       <Form.Group>
@@ -159,7 +168,7 @@ const ProfileEditForm = () => {
   return (
     <Form onSubmit={handleSubmit}>
       <Row>
-        {/* Left column - Profile image */}
+        {/* Profile image section */}
         <Col className="py-2 p-0 p-md-2 text-center" md={7} lg={6}>
           <Container className={appStyles.Content}>
             <Form.Group>
@@ -195,17 +204,17 @@ const ProfileEditForm = () => {
                 }}
               />
             </Form.Group>
-            {/* Display text fields on smaller screens */}
+            {/* Show text fields on mobile */}
             <div className="d-md-none">{textFields}</div>
           </Container>
         </Col>
-        {/* Right column - Text fields */}
+        {/* Bio and buttons section for larger screens */}
         <Col md={5} lg={6} className="d-none d-md-block p-0 p-md-2 text-center">
           <Container className={appStyles.Content}>{textFields}</Container>
         </Col>
       </Row>
 
-      {/* Delete Account Confirmation Modal */}
+      {/* Delete confirmation modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Delete Account</Modal.Title>
