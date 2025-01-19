@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
@@ -23,10 +23,10 @@ const BookmarkDropdown = ({ bookmark, onDelete }) => {
 
   const handleDelete = async () => {
     try {
+      // Using the correct endpoint from your Django URLs
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
-      onDelete();
+      onDelete(bookmark.id);
       setShowDeleteModal(false);
-      setError("");
     } catch (err) {
       console.error("Delete error:", err);
       setError("Failed to delete bookmark. Please try again.");
@@ -81,21 +81,25 @@ const BookmarkFolderDropdown = ({ folder, setFolders }) => {
   const handleEdit = async (event) => {
     event.preventDefault();
     try {
-      const formData = new FormData();
-      formData.append('name', folderName.trim());
+      const response = await axiosReq.put(`/folders/${folder.id}/`, {
+        name: folderName.trim(),
+      });
 
-      const { data } = await axiosReq.put(`/folders/${folder.id}/`, formData);
       setFolders(prevFolders => ({
         ...prevFolders,
         results: prevFolders.results.map(f =>
-          f.id === folder.id ? { ...f, name: data.name } : f
+          f.id === folder.id ? { ...f, name: response.data.name } : f
         ),
       }));
       setShowEditModal(false);
       setError("");
     } catch (err) {
       console.error("Edit error:", err);
-      setError(err.response?.data?.detail || "Failed to update folder name");
+      if (err.response?.status === 404) {
+        setError("Folder not found. Please refresh the page.");
+      } else {
+        setError(err.response?.data?.detail || "Failed to update folder name");
+      }
     }
   };
 
@@ -109,7 +113,15 @@ const BookmarkFolderDropdown = ({ folder, setFolders }) => {
       setShowDeleteModal(false);
     } catch (err) {
       console.error("Delete error:", err);
-      setError("Failed to delete folder");
+      if (err.response?.status === 404) {
+        setFolders(prevFolders => ({
+          ...prevFolders,
+          results: prevFolders.results.filter(f => f.id !== folder.id),
+        }));
+        setShowDeleteModal(false);
+      } else {
+        setError("Failed to delete folder. Please try again.");
+      }
     }
   };
 
