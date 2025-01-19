@@ -29,8 +29,35 @@ export const CurrentUserProvider = ({ children }) => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     removeTokenTimestamp();
-    history.push("/signin");  // Redirect to the login page
+    history.push("/signin");
   }, [history]);
+
+  /**
+   * Check token expiration and handle automatic logout
+   */
+  useEffect(() => {
+    const checkTokenExpiration = () => {
+      const tokenTimestamp = localStorage.getItem("refreshTokenTimestamp");
+      if (tokenTimestamp) {
+        const expirationTime = new Date(parseInt(tokenTimestamp) * 1000);
+        const now = new Date();
+        
+        // Token has expired, perform logout
+        if (expirationTime <= now) {
+          handleLogout();
+        }
+      }
+    };
+
+    // Check token expiration every minute
+    const intervalId = setInterval(checkTokenExpiration, 60000);
+    
+    // Initial check
+    checkTokenExpiration();
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, [handleLogout]);
 
   /**
    * Refresh access token using refresh token
@@ -48,10 +75,10 @@ export const CurrentUserProvider = ({ children }) => {
         refresh: refresh
       });
       
-      localStorage.setItem("access_token", data.access);  // Save new access token
+      localStorage.setItem("access_token", data.access);
       return data.access;
     } catch (err) {
-      handleLogout();  // Log out if refresh fails
+      handleLogout();
       return null;
     }
   }, [handleLogout]);
@@ -70,10 +97,10 @@ export const CurrentUserProvider = ({ children }) => {
       const { data } = await axios.get("/dj-rest-auth/user/", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCurrentUser(data);  // Set the current user if the token is valid
+      setCurrentUser(data);
     } catch (err) {
       if (err.response?.status === 401) {
-        await refreshToken();  // Attempt token refresh on authentication error
+        await refreshToken();
       }
     }
   }, [refreshToken]);
@@ -92,7 +119,7 @@ export const CurrentUserProvider = ({ children }) => {
 
         // Check if token needs to be refreshed
         if (shouldRefreshToken()) {
-          token = await refreshToken();  // Attempt token refresh
+          token = await refreshToken();
         }
 
         if (token) {
@@ -107,17 +134,17 @@ export const CurrentUserProvider = ({ children }) => {
 
     // Response interceptor: handle token expiration
     axiosRes.interceptors.response.use(
-      (response) => response,  // If no error, just return the response
+      (response) => response,
       async (err) => {
         if (err.response?.status === 401) {
-          const token = await refreshToken();  // Refresh token if expired
+          const token = await refreshToken();
           if (token) {
             const config = err.config;
             config.headers.Authorization = `Bearer ${token}`;
-            return axios(config);  // Retry the request with new token
+            return axios(config);
           }
         }
-        return Promise.reject(err);  // Reject other errors
+        return Promise.reject(err);
       }
     );
   }, [refreshToken]);
@@ -130,3 +157,5 @@ export const CurrentUserProvider = ({ children }) => {
     </CurrentUserContext.Provider>
   );
 };
+
+export default CurrentUserProvider;
