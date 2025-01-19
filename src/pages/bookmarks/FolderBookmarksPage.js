@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { axiosReq } from "../../api/axiosDefaults";
 import Asset from "../../components/Asset";
 import { useParams } from "react-router-dom";
@@ -8,10 +8,6 @@ import NoResults from "../../assets/no-results.png";
 import { useCurrentUser } from "../../contexts/CurrentUserContext";
 import { BookmarkDropdown } from "../../components/BookmarkMoreDropdown";
 
-/**
- * Displays all bookmarks within a specific folder
- * Handles bookmark removal and error states
- */
 const FolderBookmarksPage = () => {
   const { folder_id } = useParams();
   const [bookmarks, setBookmarks] = useState({ results: [] });
@@ -19,10 +15,7 @@ const FolderBookmarksPage = () => {
   const [error, setError] = useState(null);
   const currentUser = useCurrentUser();
 
-  /**
-   * Fetches bookmarks for the current folder
-   */
-  const fetchBookmarks = async () => {
+  const fetchBookmarks = useCallback(async () => {
     try {
       setHasLoaded(false);
       const token = localStorage.getItem("access_token");
@@ -36,33 +29,45 @@ const FolderBookmarksPage = () => {
       setBookmarks(data);
       setError(null);
     } catch (err) {
+      console.error("Error fetching bookmarks:", err);
       setError(err.response?.data?.detail || "Failed to load bookmarks");
     } finally {
       setHasLoaded(true);
     }
-  };
+  }, [folder_id]);
 
   useEffect(() => {
     if (currentUser) {
       fetchBookmarks();
     }
-  }, [folder_id, currentUser]);
+  }, [currentUser, fetchBookmarks]);
 
-  /**
-   * Handles removing a bookmark from the folder
-   * Updates UI immediately and makes API call
-   */
   const handleRemoveBookmark = async (bookmark) => {
     try {
       await axiosReq.delete(`/bookmarks/${bookmark.id}/`);
+      // Update the state to remove the deleted bookmark
       setBookmarks(prevBookmarks => ({
         ...prevBookmarks,
         results: prevBookmarks.results.filter(b => b.id !== bookmark.id)
       }));
       setError(null);
     } catch (err) {
-      setError("Failed to remove bookmark");
-      console.error("Delete error:", err);
+      // Check if the bookmark was actually deleted despite the error
+      try {
+        await axiosReq.get(`/bookmarks/${bookmark.id}/`);
+        setError("Failed to remove bookmark");
+      } catch (checkErr) {
+        if (checkErr.response?.status === 404) {
+          // Bookmark is gone, update UI
+          setBookmarks(prevBookmarks => ({
+            ...prevBookmarks,
+            results: prevBookmarks.results.filter(b => b.id !== bookmark.id)
+          }));
+          setError(null);
+        } else {
+          setError("Failed to remove bookmark");
+        }
+      }
     }
   };
 
