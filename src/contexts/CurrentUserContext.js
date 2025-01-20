@@ -4,42 +4,24 @@ import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { useHistory } from "react-router";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
-/**
- * Thorough cookie cleanup for all possible domains and paths
- */
-const clearAllCookies = () => {
-  const cookiesToClear = [
-    'csrftoken',
-    'sessionid',
-    'my-app-auth',
-    'my-refresh-token'
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+  // Target the specific herokuapp.com domain and its subdomain
+  const cookieOptions = [
+    // Root domain with specific path
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+    // Handle the .herokuapp.com domain
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+    // Without domain specification
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+    // With secure and SameSite attributes
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
   ];
 
-  const domains = [
-    '', // no domain
-    'drf-api-green-social-61be33473742.herokuapp.com',
-    '.herokuapp.com',
-    'localhost'
-  ];
-
-  const paths = ['/', '/api', ''];
-
-  cookiesToClear.forEach(cookieName => {
-    // Clear for each combination of domain and path
-    domains.forEach(domain => {
-      paths.forEach(path => {
-        // Basic cookie clear
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}${domain ? `; domain=${domain}` : ''}`;
-        
-        // Secure version
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}${domain ? `; domain=${domain}` : ''}; secure`;
-        
-        // SameSite versions
-        ['Strict', 'Lax', 'None'].forEach(sameSite => {
-          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}${domain ? `; domain=${domain}` : ''}; SameSite=${sameSite}${sameSite === 'None' ? '; Secure' : ''}`;
-        });
-      });
-    });
+  // Apply all cookie deletion variants
+  cookieOptions.forEach(option => {
+    document.cookie = option;
   });
 };
 
@@ -63,8 +45,7 @@ export const CurrentUserProvider = ({ children }) => {
   const SESSION_TIMEOUT = 5 * 60 * 1000;
 
   /**
-   * Complete logout function that handles both manual and automatic logout
-   * Includes thorough cleanup of all auth-related data
+   * Handle logout - using exact same code as NavBar's handleSignOut
    */
   const handleLogout = useCallback(async () => {
     try {
@@ -74,45 +55,45 @@ export const CurrentUserProvider = ({ children }) => {
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1];
 
-      // Make logout request with CSRF token if it exists
-      if (csrfToken) {
-        try {
-          await axios.post(
-            "/dj-rest-auth/logout/",
-            {},
-            {
-              withCredentials: true,
-              headers: {
-                'X-CSRFToken': csrfToken,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-        } catch (err) {
-          console.error("Logout request failed:", err);
+      // Make logout request with CSRF token
+      await axios.post(
+        "/dj-rest-auth/logout/",
+        {},
+        {
+          withCredentials: true,
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    } catch (err) {
-      console.error("Logout error:", err);
-    } finally {
-      // Clear user state and tokens
+      );
+
+      // Clear user state
       setCurrentUser(null);
-      
-      // Remove stored tokens
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("session_start");
       removeTokenTimestamp();
+      
+      // Clear stored tokens
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
 
-      // Clear all cookies thoroughly
-      clearAllCookies();
+      // Clear specific authentication cookies
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
+      });
 
-      // Short delay before redirect to ensure cookies are cleared
-      setTimeout(() => {
-        // Force a complete page reload to ensure clean state
-        window.location.href = '/signin';
-      }, 100);
+      window.location.href = '/signin';
+    } catch (err) {
+      console.error('Logout failed:', err);
+      // Still attempt to clean up even if logout request fails
+      setCurrentUser(null);
+      removeTokenTimestamp();
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
+      });
+      window.location.href = '/signin';
     }
   }, []);
 
