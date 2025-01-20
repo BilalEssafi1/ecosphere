@@ -73,27 +73,31 @@ export const CurrentUserProvider = ({ children }) => {
       setCurrentUser(null);
       removeTokenTimestamp();
       
-      // Clear stored tokens
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      // Clear ALL stored data
+      localStorage.clear();
 
       // Clear specific authentication cookies
       ['csrftoken', 'sessionid'].forEach(cookieName => {
         removeCookie(cookieName);
       });
 
-      window.location.href = '/signin';
+      // Redirect to signin page without causing a loop
+      if (window.location.pathname !== '/signin') {
+        window.location.href = '/signin';
+      }
     } catch (err) {
       console.error('Logout failed:', err);
       // Still attempt to clean up even if logout request fails
       setCurrentUser(null);
       removeTokenTimestamp();
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      localStorage.clear();
       ['csrftoken', 'sessionid'].forEach(cookieName => {
         removeCookie(cookieName);
       });
-      window.location.href = '/signin';
+      
+      if (window.location.pathname !== '/signin') {
+        window.location.href = '/signin';
+      }
     }
   }, []);
 
