@@ -5,6 +5,45 @@ import { useHistory } from "react-router";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
 /**
+ * Thorough cookie cleanup for all possible domains and paths
+ */
+const clearAllCookies = () => {
+  const cookiesToClear = [
+    'csrftoken',
+    'sessionid',
+    'my-app-auth',
+    'my-refresh-token'
+  ];
+
+  const domains = [
+    '', // no domain
+    'drf-api-green-social-61be33473742.herokuapp.com',
+    '.herokuapp.com',
+    'localhost'
+  ];
+
+  const paths = ['/', '/api', ''];
+
+  cookiesToClear.forEach(cookieName => {
+    // Clear for each combination of domain and path
+    domains.forEach(domain => {
+      paths.forEach(path => {
+        // Basic cookie clear
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}${domain ? `; domain=${domain}` : ''}`;
+        
+        // Secure version
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}${domain ? `; domain=${domain}` : ''}; secure`;
+        
+        // SameSite versions
+        ['Strict', 'Lax', 'None'].forEach(sameSite => {
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}${domain ? `; domain=${domain}` : ''}; SameSite=${sameSite}${sameSite === 'None' ? '; Secure' : ''}`;
+        });
+      });
+    });
+  });
+};
+
+/**
  * Context for storing and accessing the current user data
  */
 export const CurrentUserContext = createContext();
@@ -35,19 +74,25 @@ export const CurrentUserProvider = ({ children }) => {
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1];
 
-      // Make logout request with CSRF token
-      await axios.post(
-        "/dj-rest-auth/logout/",
-        {},
-        {
-          withCredentials: true,
-          headers: {
-            'X-CSRFToken': csrfToken,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+      // Make logout request with CSRF token if it exists
+      if (csrfToken) {
+        try {
+          await axios.post(
+            "/dj-rest-auth/logout/",
+            {},
+            {
+              withCredentials: true,
+              headers: {
+                'X-CSRFToken': csrfToken,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+        } catch (err) {
+          console.error("Logout request failed:", err);
         }
-      );
+      }
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
@@ -60,25 +105,16 @@ export const CurrentUserProvider = ({ children }) => {
       localStorage.removeItem("session_start");
       removeTokenTimestamp();
 
-      // Clear ALL relevant cookies
-      ['csrftoken', 'sessionid', 'my-app-auth', 'my-refresh-token'].forEach(cookieName => {
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`;
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`;
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`;
-      });
+      // Clear all cookies thoroughly
+      clearAllCookies();
 
-      // Additional direct cookie removal for auth tokens
-      document.cookie = 'my-app-auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
-      document.cookie = 'my-refresh-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
-
-      // Redirect to signin page
-      history.push("/signin");
-
-      // Force a page reload to ensure clean state
-      window.location.reload();
+      // Short delay before redirect to ensure cookies are cleared
+      setTimeout(() => {
+        // Force a complete page reload to ensure clean state
+        window.location.href = '/signin';
+      }, 100);
     }
-  }, [history]);
+  }, []);
 
   /**
    * Check session timeout and handle automatic logout
