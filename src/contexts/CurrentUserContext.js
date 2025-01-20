@@ -23,6 +23,9 @@ const removeCookie = (name) => {
   cookieOptions.forEach(option => {
     document.cookie = option;
   });
+
+  // Log cookies for debugging purposes
+  console.log('Cookies after removal:', document.cookie);
 };
 
 /**
@@ -48,12 +51,17 @@ export const CurrentUserProvider = ({ children }) => {
    * Handle logout - using exact same code as NavBar's handleSignOut
    */
   const handleLogout = useCallback(async () => {
+    console.log("Logging out...");
     try {
       // Get CSRF token from cookies
       const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1];
+
+      if (!csrfToken) {
+        console.error("CSRF token is missing.");
+      }
 
       // Make logout request with CSRF token
       await axios.post(
@@ -72,7 +80,7 @@ export const CurrentUserProvider = ({ children }) => {
       // Clear user state
       setCurrentUser(null);
       removeTokenTimestamp();
-      
+
       // Clear ALL stored data
       localStorage.clear();
 
@@ -87,14 +95,15 @@ export const CurrentUserProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Logout failed:', err);
-      // Still attempt to clean up even if logout request fails
+    } finally {
+      // Always clear cookies and local storage as a fallback
       setCurrentUser(null);
       removeTokenTimestamp();
       localStorage.clear();
       ['csrftoken', 'sessionid'].forEach(cookieName => {
         removeCookie(cookieName);
       });
-      
+
       if (window.location.pathname !== '/signin') {
         window.location.href = '/signin';
       }
@@ -105,16 +114,16 @@ export const CurrentUserProvider = ({ children }) => {
    * Check session timeout and handle automatic logout
    */
   useEffect(() => {
-    const checkSessionTimeout = () => {
+    const checkSessionTimeout = async () => {
       const sessionStart = localStorage.getItem("session_start");
       if (sessionStart) {
-        const sessionStartTime = parseInt(sessionStart);
+        const sessionStartTime = parseInt(sessionStart, 10);
         const currentTime = new Date().getTime();
         
         // Check if session has exceeded timeout duration
         if (currentTime - sessionStartTime >= SESSION_TIMEOUT) {
           console.log("Session timeout - logging out");
-          handleLogout();
+          await handleLogout(); // Ensure proper async handling
         }
       }
     };
@@ -141,7 +150,8 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const refresh = localStorage.getItem("refresh_token");
       if (!refresh) {
-        handleLogout();
+        console.error("No refresh token found. Logging out.");
+        await handleLogout();
         return null;
       }
 
@@ -152,7 +162,8 @@ export const CurrentUserProvider = ({ children }) => {
       localStorage.setItem("access_token", data.access);
       return data.access;
     } catch (err) {
-      handleLogout();
+      console.error("Failed to refresh token. Logging out.", err);
+      await handleLogout();
       return null;
     }
   }, [handleLogout]);
@@ -173,7 +184,10 @@ export const CurrentUserProvider = ({ children }) => {
       setCurrentUser(data);
     } catch (err) {
       if (err.response?.status === 401) {
+        console.warn("Access token expired. Refreshing token...");
         await refreshToken();
+      } else {
+        console.error("Failed to fetch user data:", err);
       }
     }
   }, [refreshToken]);
@@ -210,6 +224,7 @@ export const CurrentUserProvider = ({ children }) => {
       (response) => response,
       async (err) => {
         if (err.response?.status === 401) {
+          console.warn("Unauthorized response. Attempting token refresh...");
           const token = await refreshToken();
           if (token) {
             const config = err.config;
