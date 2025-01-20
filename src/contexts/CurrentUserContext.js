@@ -4,27 +4,6 @@ import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { useHistory } from "react-router";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
-// Function to remove cookies with specific Heroku domain
-const removeCookie = (name) => {
-  // Target the specific herokuapp.com domain and its subdomain
-  const cookieOptions = [
-    // Root domain with specific path
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
-    // Handle the .herokuapp.com domain
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-    // Without domain specification
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
-    // With secure and SameSite attributes
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
-  ];
-
-  // Apply all cookie deletion variants
-  cookieOptions.forEach(option => {
-    document.cookie = option;
-  });
-};
-
 /**
  * Context for storing and accessing the current user data
  */
@@ -46,6 +25,7 @@ export const CurrentUserProvider = ({ children }) => {
 
   /**
    * Complete logout function that handles both manual and automatic logout
+   * Includes thorough cleanup of all auth-related data
    */
   const handleLogout = useCallback(async () => {
     try {
@@ -80,13 +60,23 @@ export const CurrentUserProvider = ({ children }) => {
       localStorage.removeItem("session_start");
       removeTokenTimestamp();
 
-      // Clear specific authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
-        removeCookie(cookieName);
+      // Clear ALL relevant cookies
+      ['csrftoken', 'sessionid', 'my-app-auth', 'my-refresh-token'].forEach(cookieName => {
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`;
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`;
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`;
       });
+
+      // Additional direct cookie removal for auth tokens
+      document.cookie = 'my-app-auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
+      document.cookie = 'my-refresh-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
 
       // Redirect to signin page
       history.push("/signin");
+
+      // Force a page reload to ensure clean state
+      window.location.reload();
     }
   }, [history]);
 
