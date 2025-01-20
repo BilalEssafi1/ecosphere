@@ -85,7 +85,7 @@ export const CurrentUserProvider = ({ children }) => {
       localStorage.clear();
 
       // Clear specific authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
+      ['csrftoken', 'sessionid', 'my-refresh-token'].forEach(cookieName => {
         removeCookie(cookieName);
       });
 
@@ -100,7 +100,7 @@ export const CurrentUserProvider = ({ children }) => {
       setCurrentUser(null);
       removeTokenTimestamp();
       localStorage.clear();
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
+      ['csrftoken', 'sessionid', 'my-refresh-token'].forEach(cookieName => {
         removeCookie(cookieName);
       });
 
