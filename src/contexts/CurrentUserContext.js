@@ -4,6 +4,27 @@ import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { useHistory } from "react-router";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+  // Target the specific herokuapp.com domain and its subdomain
+  const cookieOptions = [
+    // Root domain with specific path
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+    // Handle the .herokuapp.com domain
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+    // Without domain specification
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+    // With secure and SameSite attributes
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
+  ];
+
+  // Apply all cookie deletion variants
+  cookieOptions.forEach(option => {
+    document.cookie = option;
+  });
+};
+
 /**
  * Context for storing and accessing the current user data
  */
@@ -20,48 +41,90 @@ export const CurrentUserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const history = useHistory();
 
+  // Set session timeout to 5 Minutes
+  const SESSION_TIMEOUT = 5 * 60 * 1000;
+
   /**
-   * Handle user logout and cleanup
-   * Memoized to prevent recreation and fix dependency warnings
+   * Complete logout function that handles both manual and automatic logout
    */
-  const handleLogout = useCallback(() => {
-    setCurrentUser(null);
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    removeTokenTimestamp();
-    history.push("/signin");
+  const handleLogout = useCallback(async () => {
+    try {
+      // Get CSRF token from cookies
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      // Make logout request with CSRF token
+      await axios.post(
+        "/dj-rest-auth/logout/",
+        {},
+        {
+          withCredentials: true,
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      // Clear user state and tokens
+      setCurrentUser(null);
+      
+      // Remove stored tokens
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("session_start");
+      removeTokenTimestamp();
+
+      // Clear specific authentication cookies
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
+      });
+
+      // Redirect to signin page
+      history.push("/signin");
+    }
   }, [history]);
 
   /**
-   * Check token expiration and handle automatic logout
+   * Check session timeout and handle automatic logout
    */
   useEffect(() => {
-    const checkTokenExpiration = () => {
-      const tokenTimestamp = localStorage.getItem("refreshTokenTimestamp");
-      if (tokenTimestamp) {
-        const expirationTime = new Date(parseInt(tokenTimestamp) * 1000);
-        const now = new Date();
+    const checkSessionTimeout = () => {
+      const sessionStart = localStorage.getItem("session_start");
+      if (sessionStart) {
+        const sessionStartTime = parseInt(sessionStart);
+        const currentTime = new Date().getTime();
         
-        // Token has expired, perform logout
-        if (expirationTime <= now) {
+        // Check if session has exceeded timeout duration
+        if (currentTime - sessionStartTime >= SESSION_TIMEOUT) {
+          console.log("Session timeout - logging out");
           handleLogout();
         }
       }
     };
 
-    // Check token expiration every minute
-    const intervalId = setInterval(checkTokenExpiration, 60000);
+    // Set initial session start time if not exists
+    if (!localStorage.getItem("session_start") && currentUser) {
+      localStorage.setItem("session_start", new Date().getTime().toString());
+    }
+
+    // Check session timeout every minute
+    const intervalId = setInterval(checkSessionTimeout, 60000);
     
     // Initial check
-    checkTokenExpiration();
+    checkSessionTimeout();
 
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
-  }, [handleLogout]);
+  }, [handleLogout, SESSION_TIMEOUT, currentUser]);
 
   /**
    * Refresh access token using refresh token
-   * Memoized to prevent recreation and fix dependency warnings
    */
   const refreshToken = useCallback(async () => {
     try {
@@ -85,7 +148,6 @@ export const CurrentUserProvider = ({ children }) => {
 
   /**
    * Fetch current user data using stored token
-   * Memoized to prevent recreation and fix dependency warnings
    */
   const handleMount = useCallback(async () => {
     try {
