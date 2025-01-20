@@ -23,9 +23,6 @@ const removeCookie = (name) => {
   cookieOptions.forEach(option => {
     document.cookie = option;
   });
-
-  // Log cookies for debugging purposes
-  console.log('Cookies after removal:', document.cookie);
 };
 
 /**
@@ -44,24 +41,19 @@ export const CurrentUserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const history = useHistory();
 
-  // Set session timeout to 5 Minutes
+  // Set session timeout to 5 minutes (in milliseconds)
   const SESSION_TIMEOUT = 5 * 60 * 1000;
 
   /**
-   * Handle logout - using exact same code as NavBar's handleSignOut
+   * Handle logout - using exact same approach as NavBar's handleSignOut
    */
   const handleLogout = useCallback(async () => {
-    console.log("Logging out...");
     try {
       // Get CSRF token from cookies
       const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1];
-
-      if (!csrfToken) {
-        console.error("CSRF token is missing.");
-      }
 
       // Make logout request with CSRF token
       await axios.post(
@@ -77,36 +69,29 @@ export const CurrentUserProvider = ({ children }) => {
         }
       );
 
-      // Clear user state
+      // Clear user state and tokens
       setCurrentUser(null);
       removeTokenTimestamp();
-
-      // Clear ALL stored data
-      localStorage.clear();
+      
+      // Clear stored tokens
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('session_start');
 
       // Clear specific authentication cookies
-      ['csrftoken', 'sessionid', 'my-refresh-token'].forEach(cookieName => {
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
         removeCookie(cookieName);
       });
 
-      // Redirect to signin page without causing a loop
-      if (window.location.pathname !== '/signin') {
-        window.location.href = '/signin';
-      }
+      // Redirect to signin page
+      window.location.href = '/signin';
+      
     } catch (err) {
       console.error('Logout failed:', err);
-    } finally {
-      // Always clear cookies and local storage as a fallback
-      setCurrentUser(null);
-      removeTokenTimestamp();
-      localStorage.clear();
-      ['csrftoken', 'sessionid', 'my-refresh-token'].forEach(cookieName => {
+      // Attempt to clear cookies even if the logout request fails
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
         removeCookie(cookieName);
       });
-
-      if (window.location.pathname !== '/signin') {
-        window.location.href = '/signin';
-      }
     }
   }, []);
 
@@ -114,16 +99,16 @@ export const CurrentUserProvider = ({ children }) => {
    * Check session timeout and handle automatic logout
    */
   useEffect(() => {
-    const checkSessionTimeout = async () => {
+    const checkSessionTimeout = () => {
       const sessionStart = localStorage.getItem("session_start");
-      if (sessionStart) {
-        const sessionStartTime = parseInt(sessionStart, 10);
+      if (sessionStart && currentUser) {
+        const sessionStartTime = parseInt(sessionStart);
         const currentTime = new Date().getTime();
         
         // Check if session has exceeded timeout duration
         if (currentTime - sessionStartTime >= SESSION_TIMEOUT) {
           console.log("Session timeout - logging out");
-          await handleLogout(); // Ensure proper async handling
+          handleLogout();
         }
       }
     };
@@ -150,8 +135,7 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const refresh = localStorage.getItem("refresh_token");
       if (!refresh) {
-        console.error("No refresh token found. Logging out.");
-        await handleLogout();
+        handleLogout();
         return null;
       }
 
@@ -162,8 +146,7 @@ export const CurrentUserProvider = ({ children }) => {
       localStorage.setItem("access_token", data.access);
       return data.access;
     } catch (err) {
-      console.error("Failed to refresh token. Logging out.", err);
-      await handleLogout();
+      handleLogout();
       return null;
     }
   }, [handleLogout]);
@@ -184,10 +167,7 @@ export const CurrentUserProvider = ({ children }) => {
       setCurrentUser(data);
     } catch (err) {
       if (err.response?.status === 401) {
-        console.warn("Access token expired. Refreshing token...");
         await refreshToken();
-      } else {
-        console.error("Failed to fetch user data:", err);
       }
     }
   }, [refreshToken]);
@@ -224,7 +204,6 @@ export const CurrentUserProvider = ({ children }) => {
       (response) => response,
       async (err) => {
         if (err.response?.status === 401) {
-          console.warn("Unauthorized response. Attempting token refresh...");
           const token = await refreshToken();
           if (token) {
             const config = err.config;
