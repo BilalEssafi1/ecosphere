@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory, useParams } from "react-router";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Image from "react-bootstrap/Image";
@@ -16,13 +16,28 @@ import {
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 
-/**
- * ProfileEditForm component
- * Handles editing and deletion of user profiles
- * Includes image upload, bio editing, and account deletion
- */
-const ProfileEditForm = () => {
-  // Get current user context and setter
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+  // Target the specific herokuapp.com domain and its subdomain
+  const cookieOptions = [
+    // Root domain with specific path
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+    // Handle the .herokuapp.com domain
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+    // Without domain specification
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+    // With secure and SameSite attributes
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
+  ];
+
+  // Apply all cookie deletion variants
+  cookieOptions.forEach(option => {
+    document.cookie = option;
+  });
+};
+
+function ProfileEditForm() {
   const currentUser = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
   const { id } = useParams();
@@ -53,7 +68,6 @@ const ProfileEditForm = () => {
           const { name, content, image } = data;
           setProfileData({ name, content, image });
         } catch (err) {
-          console.log(err);
           history.push("/");
         }
       } else {
@@ -114,20 +128,24 @@ const ProfileEditForm = () => {
       await axiosReq.delete(`/profiles/${id}/`);
       // Clear all user data and authentication
       setCurrentUser(null);
+      
+      // First clear tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      // Redirect to signin page
-      history.push("/signin");
-    } catch (err) {
-      console.error("Delete error:", err);
-      setErrors({ 
-        delete: [err.response?.data?.detail || "Failed to delete account. Please try again."] 
+
+      // Clear all authentication cookies
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
       });
+
+      // Force a page reload before redirecting
+      window.location.href = '/signin';
+    } catch (err) {
+      setErrors({ delete: ["Failed to delete account. Please try again."] });
       setIsDeleting(false);
     }
   };
 
-  // Text fields for bio and buttons
   const textFields = (
     <>
       <Form.Group>
@@ -146,7 +164,6 @@ const ProfileEditForm = () => {
           {message}
         </Alert>
       ))}
-
       <Button
         className={`${btnStyles.Button} ${btnStyles.Blue}`}
         onClick={() => history.goBack()}
@@ -168,7 +185,6 @@ const ProfileEditForm = () => {
   return (
     <Form onSubmit={handleSubmit}>
       <Row>
-        {/* Profile image section */}
         <Col className="py-2 p-0 p-md-2 text-center" md={7} lg={6}>
           <Container className={appStyles.Content}>
             <Form.Group>
@@ -204,17 +220,14 @@ const ProfileEditForm = () => {
                 }}
               />
             </Form.Group>
-            {/* Show text fields on mobile */}
             <div className="d-md-none">{textFields}</div>
           </Container>
         </Col>
-        {/* Bio and buttons section for larger screens */}
         <Col md={5} lg={6} className="d-none d-md-block p-0 p-md-2 text-center">
           <Container className={appStyles.Content}>{textFields}</Container>
         </Col>
       </Row>
 
-      {/* Delete confirmation modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Delete Account</Modal.Title>
@@ -247,6 +260,6 @@ const ProfileEditForm = () => {
       </Modal>
     </Form>
   );
-};
+}
 
 export default ProfileEditForm;

@@ -17,6 +17,27 @@ import {
 import axios from "axios";
 import { useRedirect } from "../../hooks/useRedirect";
 
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+  // Target the specific herokuapp.com domain and its subdomain
+  const cookieOptions = [
+    // Root domain with specific path
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+    // Handle the .herokuapp.com domain
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+    // Without domain specification
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+    // With secure and SameSite attributes
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
+  ];
+
+  // Apply all cookie deletion variants
+  cookieOptions.forEach(option => {
+    document.cookie = option;
+  });
+};
+
 const SignUpForm = () => {
   useRedirect("loggedIn");
   const [signUpData, setSignUpData] = useState({
@@ -41,19 +62,18 @@ const SignUpForm = () => {
     event.preventDefault();
     try {
       await axios.post("/dj-rest-auth/registration/", signUpData);
-      // Clean up cookies after successful registration
-      ['csrftoken', 'sessionid', 'messages'].forEach(cookieName => {
-        // Target the specific herokuapp.com domain and its subdomain
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`;
-        // Handle the .herokuapp.com domain
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`;
-        // Without domain specification
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-        // With secure and SameSite attributes
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`;
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`;
+      
+      // First clear tokens if any exist
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+
+      // Clear all authentication cookies
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
       });
-      history.push("/signin");
+
+      // Force a page reload before redirecting
+      window.location.href = '/signin';
     } catch (err) {
       setErrors(err.response?.data);
     }
