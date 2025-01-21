@@ -101,17 +101,17 @@ export const CurrentUserProvider = ({ children }) => {
       // Only check timeout if user is logged in
       if (currentUser) {
         const sessionStart = localStorage.getItem("session_start");
+        const currentTime = new Date().getTime();
+        
         if (sessionStart) {
           const sessionStartTime = parseInt(sessionStart);
-          const currentTime = new Date().getTime();
-          
-          // Check if session has exceeded timeout duration
           if (currentTime - sessionStartTime >= SESSION_TIMEOUT) {
+            console.log("Session timeout - logging out");
             handleLogout();
           }
         } else {
-          // If there's no session start time but user is logged in, set it
-          localStorage.setItem("session_start", new Date().getTime().toString());
+          // Only set session start if it doesn't exist
+          localStorage.setItem("session_start", currentTime.toString());
         }
       }
     };
@@ -119,11 +119,16 @@ export const CurrentUserProvider = ({ children }) => {
     // Check session timeout every minute
     const intervalId = setInterval(checkSessionTimeout, 60000);
     
-    // Initial check
+    // Run check immediately
     checkSessionTimeout();
 
-    // Cleanup interval on unmount
-    return () => clearInterval(intervalId);
+    // Cleanup interval and session on unmount or user logout
+    return () => {
+      clearInterval(intervalId);
+      if (!currentUser) {
+        localStorage.removeItem("session_start");
+      }
+    };
   }, [handleLogout, SESSION_TIMEOUT, currentUser]);
 
   /**
