@@ -41,6 +41,18 @@ const SignUpForm = () => {
     event.preventDefault();
     try {
       await axios.post("/dj-rest-auth/registration/", signUpData);
+      // Clean up cookies after successful registration
+      ['csrftoken', 'sessionid', 'messages'].forEach(cookieName => {
+        // Target the specific herokuapp.com domain and its subdomain
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`;
+        // Handle the .herokuapp.com domain
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`;
+        // Without domain specification
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+        // With secure and SameSite attributes
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`;
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`;
+      });
       history.push("/signin");
     } catch (err) {
       setErrors(err.response?.data);
@@ -132,11 +144,11 @@ const SignUpForm = () => {
         <Image
           className={`${appStyles.FillerImage}`}
           src={logoEcosphere}
-          style={{ 
+          style={{
             width: "100%",
-            maxWidth: "700px", 
+            maxWidth: "700px",
             height: "100%",
-            maxHeight: "350px" }} 
+            maxHeight: "350px" }}
         />
       </Col>
     </Row>
