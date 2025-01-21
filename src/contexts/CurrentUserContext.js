@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import { axiosReq, axiosRes } from "../api/axiosDefaults";
-import { useHistory } from "react-router";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
 // Function to remove cookies with specific Heroku domain
@@ -39,7 +38,6 @@ export const useSetCurrentUser = () => useContext(SetCurrentUserContext);
  */
 export const CurrentUserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const history = useHistory();
 
   // Set session timeout to 5 minutes (in milliseconds)
   const SESSION_TIMEOUT = 5 * 60 * 1000;
@@ -158,6 +156,7 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("access_token");
       if (!token) {
+        localStorage.removeItem("session_start");
         return;
       }
 
@@ -165,8 +164,11 @@ export const CurrentUserProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentUser(data);
+      // Reset session start time on successful login
+      localStorage.setItem("session_start", new Date().getTime().toString());
     } catch (err) {
       if (err.response?.status === 401) {
+        localStorage.removeItem("session_start");
         await refreshToken();
       }
     }
