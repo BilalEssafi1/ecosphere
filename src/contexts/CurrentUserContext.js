@@ -39,11 +39,21 @@ export const useSetCurrentUser = () => useContext(SetCurrentUserContext);
 export const CurrentUserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Set session timeout to 5 minutes (in milliseconds)
-  const SESSION_TIMEOUT = 5 * 60 * 1000;
+  /**
+   * Handle clean logout and cleanup of auth data
+   */
+  const handleCleanup = useCallback(() => {
+    setCurrentUser(null);
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    ['csrftoken', 'sessionid'].forEach(cookieName => {
+      removeCookie(cookieName);
+    });
+    window.location.href = '/signin';
+  }, []);
 
   /**
-   * Handle logout
+   * Handle logout - using exact same code as NavBar's handleSignOut
    */
   const handleLogout = useCallback(async () => {
     try {
@@ -74,7 +84,6 @@ export const CurrentUserProvider = ({ children }) => {
       // Clear stored tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      localStorage.removeItem('session_start');
 
       // Clear specific authentication cookies
       ['csrftoken', 'sessionid'].forEach(cookieName => {
@@ -94,51 +103,15 @@ export const CurrentUserProvider = ({ children }) => {
   }, []);
 
   /**
-   * Check session timeout and handle automatic logout
-   */
-  useEffect(() => {
-    const checkSessionTimeout = () => {
-      // Only check timeout if user is logged in
-      if (currentUser) {
-        const sessionStart = localStorage.getItem("session_start");
-        const currentTime = new Date().getTime();
-        
-        if (sessionStart) {
-          const sessionStartTime = parseInt(sessionStart);
-          if (currentTime - sessionStartTime >= SESSION_TIMEOUT) {
-            console.log("Session timeout - logging out");
-            handleLogout();
-          }
-        } else {
-          // Only set session start if it doesn't exist
-          localStorage.setItem("session_start", currentTime.toString());
-        }
-      }
-    };
-
-    // Check session timeout every minute
-    const intervalId = setInterval(checkSessionTimeout, 60000);
-    
-    // Run check immediately
-    checkSessionTimeout();
-
-    // Cleanup interval and session on unmount or user logout
-    return () => {
-      clearInterval(intervalId);
-      if (!currentUser) {
-        localStorage.removeItem("session_start");
-      }
-    };
-  }, [handleLogout, SESSION_TIMEOUT, currentUser]);
-
-  /**
    * Refresh access token using refresh token
+   * Handles token expiration with proper cleanup
    */
   const refreshToken = useCallback(async () => {
     try {
       const refresh = localStorage.getItem("refresh_token");
       if (!refresh) {
-        handleLogout();
+        // Clean logout if no refresh token
+        handleCleanup();
         return null;
       }
 
@@ -149,10 +122,12 @@ export const CurrentUserProvider = ({ children }) => {
       localStorage.setItem("access_token", data.access);
       return data.access;
     } catch (err) {
-      handleLogout();
+      // If refresh fails, do a clean logout
+      console.error('Token refresh failed:', err);
+      handleCleanup();
       return null;
     }
-  }, [handleLogout]);
+  }, [handleCleanup]);
 
   /**
    * Fetch current user data using stored token
@@ -161,7 +136,6 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("access_token");
       if (!token) {
-        localStorage.removeItem("session_start");
         return;
       }
 
@@ -169,11 +143,8 @@ export const CurrentUserProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentUser(data);
-      // Reset session start time on successful login
-      localStorage.setItem("session_start", new Date().getTime().toString());
     } catch (err) {
       if (err.response?.status === 401) {
-        localStorage.removeItem("session_start");
         await refreshToken();
       }
     }
@@ -211,17 +182,26 @@ export const CurrentUserProvider = ({ children }) => {
       (response) => response,
       async (err) => {
         if (err.response?.status === 401) {
-          const token = await refreshToken();
-          if (token) {
-            const config = err.config;
-            config.headers.Authorization = `Bearer ${token}`;
-            return axios(config);
+          try {
+            const token = await refreshToken();
+            if (token) {
+              const config = err.config;
+              config.headers.Authorization = `Bearer ${token}`;
+              return axios(config);
+            } else {
+              // If refresh failed, ensure clean logout
+              handleCleanup();
+            }
+          } catch (refreshErr) {
+            // Ensure clean logout on any refresh error
+            console.error('Token refresh error:', refreshErr);
+            handleCleanup();
           }
         }
         return Promise.reject(err);
       }
     );
-  }, [refreshToken]);
+  }, [refreshToken, handleCleanup]);
 
   return (
     <CurrentUserContext.Provider value={currentUser}>
