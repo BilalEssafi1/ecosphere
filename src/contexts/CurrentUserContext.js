@@ -45,7 +45,7 @@ export const CurrentUserProvider = ({ children }) => {
   const SESSION_TIMEOUT = 5 * 60 * 1000;
 
   /**
-   * Handle logout - using exact same approach as NavBar's handleSignOut
+   * Handle logout
    */
   const handleLogout = useCallback(async () => {
     try {
@@ -100,23 +100,23 @@ export const CurrentUserProvider = ({ children }) => {
    */
   useEffect(() => {
     const checkSessionTimeout = () => {
-      const sessionStart = localStorage.getItem("session_start");
-      if (sessionStart && currentUser) {
-        const sessionStartTime = parseInt(sessionStart);
-        const currentTime = new Date().getTime();
-        
-        // Check if session has exceeded timeout duration
-        if (currentTime - sessionStartTime >= SESSION_TIMEOUT) {
-          console.log("Session timeout - logging out");
-          handleLogout();
+      // Only check timeout if user is logged in
+      if (currentUser) {
+        const sessionStart = localStorage.getItem("session_start");
+        if (sessionStart) {
+          const sessionStartTime = parseInt(sessionStart);
+          const currentTime = new Date().getTime();
+          
+          // Check if session has exceeded timeout duration
+          if (currentTime - sessionStartTime >= SESSION_TIMEOUT) {
+            handleLogout();
+          }
+        } else {
+          // If there's no session start time but user is logged in, set it
+          localStorage.setItem("session_start", new Date().getTime().toString());
         }
       }
     };
-
-    // Set initial session start time if not exists
-    if (!localStorage.getItem("session_start") && currentUser) {
-      localStorage.setItem("session_start", new Date().getTime().toString());
-    }
 
     // Check session timeout every minute
     const intervalId = setInterval(checkSessionTimeout, 60000);

@@ -11,7 +11,7 @@ const Home = () => {
         discover green initiatives, and connect with like-minded individuals.
       </p>
       <p>
-        <Link to="/signup" className={styles.SignUpLink}>Sign up</Link> to like and comment 
+        Sign up to like and comment 
         on inspiring sustainability posts, bookmark your favorite green ideas, 
         follow eco-conscious creators, and share your own sustainable living tips.
       </p>
