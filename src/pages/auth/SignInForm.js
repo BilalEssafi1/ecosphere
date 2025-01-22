@@ -29,9 +29,17 @@ function SignInForm() {
   const { username, password } = signInData;
   const [errors, setErrors] = useState({});
 
+  // Clear any existing cookies when component mounts
   useEffect(() => {
-    // Clean up any existing cookies on mount
-    clearAuthCookies();
+    const cleanupAuth = () => {
+      clearAuthCookies();
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    };
+
+    cleanupAuth();
+    // Also cleanup when component unmounts
+    return () => cleanupAuth();
   }, []);
 
   /**
@@ -40,9 +48,11 @@ function SignInForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Clean up any existing cookies
+      // Clear any existing auth state before attempting login
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       clearAuthCookies();
-      
+
       // Small delay to ensure cookies are cleared
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -51,7 +61,8 @@ function SignInForm() {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
-        }
+        },
+        withCredentials: false // Prevent automatic cookie handling
       });
 
       // Handle successful login
