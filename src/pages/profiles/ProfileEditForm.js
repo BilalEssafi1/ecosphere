@@ -15,8 +15,6 @@ import {
 } from "../../contexts/CurrentUserContext";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
-import { removeTokenTimestamp } from "../../utils/utils";
-import { clearAuthCookies } from "../../contexts/CurrentUserContext";
 
 function ProfileEditForm() {
   const currentUser = useCurrentUser();
@@ -100,27 +98,19 @@ function ProfileEditForm() {
 
   /**
    * Handles account deletion
-   * First deletes profile and then performs complete logout
-   * Uses shared handleLogout for consistent cleanup
+   * First deletes profile and then performs logout
    */
   const handleDelete = async () => {
     if (isDeleting) return;
     setIsDeleting(true);
     try {
-      // Get current token
-      const token = localStorage.getItem('access_token');
-      
       // First delete the profile
-      await axiosReq.delete(`/profiles/${id}/`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      await axiosReq.delete(`/profiles/${id}/`);
 
-      // Use shared logout handler for consistent cleanup
+      // Then handle logout and cleanup
       await handleLogout();
-      
     } catch (err) {
+      console.error('Delete error:', err);
       setErrors({ delete: ["Failed to delete account. Please try again."] });
       setIsDeleting(false);
     }
