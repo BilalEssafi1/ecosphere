@@ -18,7 +18,7 @@ import { setTokenTimestamp } from "../../utils/utils";
 import { clearAuthCookies } from "../../contexts/CurrentUserContext";
 
 function SignInForm() {
-  const setCurrentUser = useSetCurrentUser();
+  const { setCurrentUser } = useSetCurrentUser();
   useRedirect("loggedIn");
   const history = useHistory();
 
