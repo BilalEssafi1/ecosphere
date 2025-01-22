@@ -16,66 +16,11 @@ import {
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 import { removeTokenTimestamp } from "../../utils/utils";
-
-// Function to remove cookies with specific Heroku domain
-const removeCookie = (name) => {
-  // Get the current domain
-  const domain = window.location.hostname;
-  
-  // Array of paths to try
-  const paths = ['/', '/api', ''];
-  
-  // More comprehensive array of domain variations
-  const domains = [
-    domain,
-    `.${domain}`,
-    domain.split('.').slice(1).join('.'),
-    `.${domain.split('.').slice(1).join('.')}`
-  ];
-
-  // Array of cookie setting variations to try
-  const cookieOptions = [
-    // Basic removal
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
-    
-    // Try all domain and path combinations
-    ...domains.flatMap(d => 
-      paths.map(p => 
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${d}; path=${p}`
-      )
-    ),
-    
-    // Secure and SameSite variations
-    ...domains.flatMap(d => 
-      paths.map(p => 
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${d}; path=${p}; secure; samesite=none`
-      )
-    ),
-
-    // Additional variations without domain specification
-    ...paths.map(p => 
-      `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${p}`
-    )
-  ];
-
-  // Apply all cookie deletion variants
-  cookieOptions.forEach(option => {
-    document.cookie = option;
-  });
-
-  // Debug logging - check if cookie was actually removed
-  const remainingCookie = document.cookie
-    .split(';')
-    .find(c => c.trim().startsWith(`${name}=`));
-
-  if (remainingCookie) {
-    console.warn(`Warning: Cookie '${name}' may still exist: ${remainingCookie}`);
-  }
-};
+import { clearAuthCookies } from "../../contexts/CurrentUserContext";
 
 function ProfileEditForm() {
   const currentUser = useCurrentUser();
-  const setCurrentUser = useSetCurrentUser();
+  const { setCurrentUser } = useSetCurrentUser();
   const { id } = useParams();
   const history = useHistory();
   const imageFile = useRef();
@@ -161,39 +106,24 @@ function ProfileEditForm() {
     if (isDeleting) return;
     setIsDeleting(true);
     try {
-      await axiosReq.delete(`/profiles/${id}/`);
+      // Get current token
+      const token = localStorage.getItem('access_token');
+      
+      await axiosReq.delete(`/profiles/${id}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
       setCurrentUser(null);
       
-      // Debug logging
-      console.log('Cookies before cleanup:', document.cookie);
-
-      // Clear tokens
+      // Clear auth state
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       removeTokenTimestamp();
+      clearAuthCookies();
 
-      // Get all existing cookies
-      const allCookies = document.cookie.split(';').map(cookie => 
-        cookie.split('=')[0].trim()
-      );
-
-      // Clear all authentication cookies
-      const authCookies = [
-        'csrftoken', 
-        'sessionid', 
-        'my-app-auth', 
-        'my-refresh-token',
-        'message'
-      ];
-
-      // Remove both known auth cookies and any others found
-      [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-        removeCookie(cookieName);
-      });
-
-      console.log('Cookies after cleanup:', document.cookie);
-
-      // Force a complete page reload before redirecting
+      // Redirect to signin
       window.location.replace('/signin');
     } catch (err) {
       setErrors({ delete: ["Failed to delete account. Please try again."] });
