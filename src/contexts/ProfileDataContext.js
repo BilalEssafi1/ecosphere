@@ -10,85 +10,95 @@ export const useProfileData = () => useContext(ProfileDataContext);
 export const useSetProfileData = () => useContext(SetProfileDataContext);
 
 export const ProfileDataProvider = ({ children }) => {
- const [profileData, setProfileData] = useState({
-   pageProfile: { results: [] },
-   popularProfiles: { results: [] },
- });
+  const [profileData, setProfileData] = useState({
+    pageProfile: { results: [] },
+    popularProfiles: { results: [] },
+  });
 
- const currentUser = useCurrentUser();
+  const currentUser = useCurrentUser();
 
- const handleFollow = async (clickedProfile) => {
-   try {
-     const { data } = await axiosRes.post("/followers/", {
-       followed: clickedProfile.id,
-     });
+  const handleFollow = async (clickedProfile) => {
+    try {
+      const { data } = await axiosRes.post("/followers/", {
+        followed: clickedProfile.id,
+      });
 
-     setProfileData((prevState) => ({
-       ...prevState,
-       pageProfile: {
-         results: prevState.pageProfile.results.map((profile) =>
-           followHelper(profile, clickedProfile, data.id)
-         ),
-       },
-       popularProfiles: {
-         ...prevState.popularProfiles,
-         results: prevState.popularProfiles.results.map((profile) =>
-           followHelper(profile, clickedProfile, data.id)
-         ),
-       },
-     }));
-   } catch (err) {
-   }
- };
+      setProfileData((prevState) => ({
+        ...prevState,
+        pageProfile: {
+          results: prevState.pageProfile.results.map((profile) =>
+            followHelper(profile, clickedProfile, data.id)
+          ),
+        },
+        popularProfiles: {
+          ...prevState.popularProfiles,
+          results: prevState.popularProfiles.results.map((profile) =>
+            followHelper(profile, clickedProfile, data.id)
+          ),
+        },
+      }));
+    } catch (err) {
+      // Error handled silently to maintain user experience
+    }
+  };
 
- const handleUnfollow = async (clickedProfile) => {
-   try {
-     await axiosRes.delete(`/followers/${clickedProfile.following_id}/`);
+  const handleUnfollow = async (clickedProfile) => {
+    try {
+      await axiosRes.delete(`/followers/${clickedProfile.following_id}/`);
 
-     setProfileData((prevState) => ({
-       ...prevState,
-       pageProfile: {
-         results: prevState.pageProfile.results.map((profile) =>
-           unfollowHelper(profile, clickedProfile)
-         ),
-       },
-       popularProfiles: {
-         ...prevState.popularProfiles,
-         results: prevState.popularProfiles.results.map((profile) =>
-           unfollowHelper(profile, clickedProfile)
-         ),
-       },
-     }));
-   } catch (err) {
-     // Error handled silently to maintain user experience
-   }
- };
+      setProfileData((prevState) => ({
+        ...prevState,
+        pageProfile: {
+          results: prevState.pageProfile.results.map((profile) =>
+            unfollowHelper(profile, clickedProfile)
+          ),
+        },
+        popularProfiles: {
+          ...prevState.popularProfiles,
+          results: prevState.popularProfiles.results.map((profile) =>
+            unfollowHelper(profile, clickedProfile)
+          ),
+        },
+      }));
+    } catch (err) {
+      // Error handled silently to maintain user experience
+    }
+  };
 
- useEffect(() => {
-   const handleMount = async () => {
-     try {
-       const { data } = await axiosReq.get(
-         "/profiles/?ordering=-followers_count"
-       );
-       setProfileData((prevState) => ({
-         ...prevState,
-         popularProfiles: data,
-       }));
-     } catch (err) {
-       // Error handled silently to maintain user experience
-     }
-   };
+  useEffect(() => {
+    const handleMount = async () => {
+      try {
+        // Only fetch profiles if there's a logged-in user
+        if (currentUser) {
+          const { data } = await axiosReq.get(
+            "/profiles/?ordering=-followers_count"
+          );
+          setProfileData((prevState) => ({
+            ...prevState,
+            popularProfiles: data,
+          }));
+        } else {
+          // Reset profile data when no user is logged in
+          setProfileData({
+            pageProfile: { results: [] },
+            popularProfiles: { results: [] },
+          });
+        }
+      } catch (err) {
+        // Error handled silently to maintain user experience
+      }
+    };
 
-   handleMount();
- }, [currentUser]);
+    handleMount();
+  }, [currentUser]);
 
- return (
-   <ProfileDataContext.Provider value={profileData}>
-     <SetProfileDataContext.Provider
-       value={{ setProfileData, handleFollow, handleUnfollow }}
-     >
-       {children}
-     </SetProfileDataContext.Provider>
-   </ProfileDataContext.Provider>
- );
+  return (
+    <ProfileDataContext.Provider value={profileData}>
+      <SetProfileDataContext.Provider
+        value={{ setProfileData, handleFollow, handleUnfollow }}
+      >
+        {children}
+      </SetProfileDataContext.Provider>
+    </ProfileDataContext.Provider>
+  );
 };
