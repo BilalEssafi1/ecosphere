@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Cookies from "js-cookie";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
@@ -82,7 +81,6 @@ function SignInForm() {
   const setCurrentUser = useSetCurrentUser();
   useRedirect("loggedIn");
   const history = useHistory();
-  const [csrfToken, setCsrfToken] = useState("");
 
   const [signInData, setSignInData] = useState({
     username: "",
@@ -96,65 +94,36 @@ function SignInForm() {
   * Clears old tokens and cookies before fetching new CSRF token
   */
   useEffect(() => {
-    const setupAuth = async () => {
-      console.log('Cookies before cleanup:', document.cookie);
-      
-      // Clear all existing cookies
-      const allCookies = document.cookie.split(';').map(cookie => 
-        cookie.split('=')[0].trim()
-      );
+    console.log('Cookies before cleanup:', document.cookie);
 
-      // Comprehensive list of cookies to remove
-      const authCookies = [
-        'csrftoken', 
-        'sessionid', 
-        'my-app-auth', 
-        'my-refresh-token',
-        'message',
-        'messages',  // Added additional message cookie variant
-        'cookieconsent_status',
-        'token',
-        'jwt',
-        'auth_token'
-      ];
+    // Clear all existing cookies first
+    const allCookies = document.cookie.split(';').map(cookie => 
+      cookie.split('=')[0].trim()
+    );
 
-      // Remove both known auth cookies and any others found
-      [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-        if (cookieName) {  // Only process non-empty cookie names
-          console.log('Removing cookie:', cookieName);
-          removeCookie(cookieName);
-        }
-      });
+    // Comprehensive list of cookies to remove
+    const authCookies = [
+      'csrftoken', 
+      'sessionid', 
+      'my-app-auth', 
+      'my-refresh-token',
+      'message',
+      'messages',
+      'cookieconsent_status',
+      'token',
+      'jwt',
+      'auth_token'
+    ];
 
-      console.log('Cookies after cleanup:', document.cookie);
-
-      try {
-        // Get CSRF token with explicit credentials and headers
-        const response = await axios.get('/dj-rest-auth/user/', {
-          withCredentials: true,
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        const token = Cookies.get('csrftoken');
-        if (token) {
-          setCsrfToken(token);
-          console.log('New CSRF token acquired');
-        }
-      } catch (err) {
-        // Expected 401 for non-authenticated users
-        const token = Cookies.get('csrftoken');
-        if (token) {
-          setCsrfToken(token);
-          console.log('New CSRF token acquired from error path');
-        }
+    // Remove both known auth cookies and any others found
+    [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
+      if (cookieName) {
+        console.log('Removing cookie:', cookieName);
+        removeCookie(cookieName);
       }
-    };
+    });
 
-    setupAuth();
+    console.log('Cookies after cleanup:', document.cookie);
   }, []);
 
   /**
@@ -163,10 +132,19 @@ function SignInForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const token = csrfToken || Cookies.get('csrftoken');
-      console.log('Using CSRF token for login:', token);
+      // First, get a fresh CSRF token
+      await axios.get('/dj-rest-auth/user/', {
+        withCredentials: true,
+      });
       
-      // Make login request with CSRF token
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      console.log('Using CSRF token for login:', token);
+
+      // Then attempt login with the fresh token
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         withCredentials: true,
         headers: {
@@ -184,7 +162,6 @@ function SignInForm() {
         localStorage.setItem("refresh_token", data.refresh);
       }
 
-     // Update user context and redirect
       setCurrentUser(data.user);
       setTokenTimestamp(data);
       history.push("/posts");
