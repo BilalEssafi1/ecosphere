@@ -15,16 +15,36 @@ import {
 } from "../../contexts/CurrentUserContext";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
-import { removeTokenTimestamp } from "../../utils/utils";
-import { clearAuthCookies } from "../../contexts/CurrentUserContext";
+
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+  // Target the specific herokuapp.com domain and its subdomain
+  const cookieOptions = [
+    // Root domain with specific path
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+    // Handle the .herokuapp.com domain
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+    // Without domain specification
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+    // With secure and SameSite attributes
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
+  ];
+
+  // Apply all cookie deletion variants
+  cookieOptions.forEach(option => {
+    document.cookie = option;
+  });
+};
 
 function ProfileEditForm() {
   const currentUser = useCurrentUser();
-  const { setCurrentUser } = useSetCurrentUser();
+  const setCurrentUser = useSetCurrentUser();
   const { id } = useParams();
   const history = useHistory();
   const imageFile = useRef();
 
+  // State for managing profile data and UI states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -36,7 +56,12 @@ function ProfileEditForm() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    /**
+     * Handles component mount
+     * Fetches profile data if user is authorized
+     */
     const handleMount = async () => {
+      // Verify current user owns this profile
       if (currentUser?.profile_id?.toString() === id) {
         try {
           const { data } = await axiosReq.get(`/profiles/${id}/`);
@@ -46,6 +71,7 @@ function ProfileEditForm() {
           history.push("/");
         }
       } else {
+        // Redirect if unauthorized
         history.push("/");
       }
     };
@@ -53,6 +79,10 @@ function ProfileEditForm() {
     handleMount();
   }, [currentUser, history, id]);
 
+  /**
+   * Handles changes to form input fields
+   * Updates profileData state with new values
+   */
   const handleChange = (event) => {
     setProfileData({
       ...profileData,
@@ -60,6 +90,10 @@ function ProfileEditForm() {
     });
   };
 
+  /**
+   * Handles form submission for profile updates
+   * Sends updated profile data to the server
+   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData();
@@ -83,29 +117,29 @@ function ProfileEditForm() {
     }
   };
 
+  /**
+   * Handles account deletion
+   * Removes user profile, clears authentication, and redirects to signin
+   */
   const handleDelete = async () => {
     if (isDeleting) return;
     setIsDeleting(true);
     try {
-      // Get current token
-      const token = localStorage.getItem('access_token');
-      
-      await axiosReq.delete(`/profiles/${id}/`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
+      await axiosReq.delete(`/profiles/${id}/`);
+      // Clear all user data and authentication
       setCurrentUser(null);
       
-      // Clear auth state
+      // First clear tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      removeTokenTimestamp();
-      clearAuthCookies();
 
-      // Redirect to signin
-      window.location.replace('/signin');
+      // Clear all authentication cookies
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
+      });
+
+      // Force a page reload before redirecting
+      window.location.href = '/signin';
     } catch (err) {
       setErrors({ delete: ["Failed to delete account. Please try again."] });
       setIsDeleting(false);

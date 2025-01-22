@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import styles from "../../styles/SignInUpForm.module.css";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 import logoEcosphere from "../../assets/sign-up.jpg";
+
 import {
   Form,
   Button,
@@ -15,19 +16,40 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 import { useRedirect } from "../../hooks/useRedirect";
-import { removeTokenTimestamp } from "../../utils/utils";
-import { clearAuthCookies } from "../../contexts/CurrentUserContext";
+
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+  // Target the specific herokuapp.com domain and its subdomain
+  const cookieOptions = [
+    // Root domain with specific path
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+    // Handle the .herokuapp.com domain
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+    // Without domain specification
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+    // With secure and SameSite attributes
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
+  ];
+
+  // Apply all cookie deletion variants
+  cookieOptions.forEach(option => {
+    document.cookie = option;
+  });
+};
 
 const SignUpForm = () => {
   useRedirect("loggedIn");
-  
   const [signUpData, setSignUpData] = useState({
     username: "",
     password1: "",
     password2: "",
   });
   const { username, password1, password2 } = signUpData;
+
   const [errors, setErrors] = useState({});
+
+  const history = useHistory();
 
   const handleChange = (event) => {
     setSignUpData({
@@ -39,22 +61,19 @@ const SignUpForm = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Perform the signup request
-      await axios.post("/dj-rest-auth/registration/", signUpData, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      // Clear tokens and cookies
+      await axios.post("/dj-rest-auth/registration/", signUpData);
+      
+      // First clear tokens if any exist
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      removeTokenTimestamp();
-      clearAuthCookies();
 
-      // Redirect to signin page
-      window.location.replace('/signin');
+      // Clear all authentication cookies
+      ['csrftoken', 'sessionid'].forEach(cookieName => {
+        removeCookie(cookieName);
+      });
+
+      // Force a page reload before redirecting
+      window.location.href = '/signin';
     } catch (err) {
       setErrors(err.response?.data);
     }
