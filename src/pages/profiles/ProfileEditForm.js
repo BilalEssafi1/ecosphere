@@ -15,6 +15,7 @@ import {
 } from "../../contexts/CurrentUserContext";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
+import { removeTokenTimestamp } from "../../utils/utils";
 
 // Function to remove cookies with specific Heroku domain
 const removeCookie = (name) => {
@@ -132,9 +133,16 @@ function ProfileEditForm() {
       // First clear tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      removeTokenTimestamp();
 
       // Clear all authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
+      [
+        'csrftoken', 
+        'sessionid', 
+        'my-app-auth', 
+        'my-refresh-token',
+        'message'
+      ].forEach(cookieName => {
         removeCookie(cookieName);
       });
 

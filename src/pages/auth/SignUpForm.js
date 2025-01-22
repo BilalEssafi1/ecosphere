@@ -4,7 +4,6 @@ import styles from "../../styles/SignInUpForm.module.css";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 import logoEcosphere from "../../assets/sign-up.jpg";
-
 import {
   Form,
   Button,
@@ -63,12 +62,18 @@ const SignUpForm = () => {
     try {
       await axios.post("/dj-rest-auth/registration/", signUpData);
       
-      // First clear tokens if any exist
+      // First clear tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
 
       // Clear all authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
+      [
+        'csrftoken', 
+        'sessionid', 
+        'my-app-auth', 
+        'my-refresh-token',
+        'message'
+      ].forEach(cookieName => {
         removeCookie(cookieName);
       });
 

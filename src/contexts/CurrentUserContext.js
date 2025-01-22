@@ -46,9 +46,20 @@ export const CurrentUserProvider = ({ children }) => {
     setCurrentUser(null);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    ['csrftoken', 'sessionid'].forEach(cookieName => {
+    removeTokenTimestamp();
+    
+    // Remove all authentication-related cookies
+    [
+      'csrftoken', 
+      'sessionid', 
+      'my-app-auth', 
+      'my-refresh-token',
+      'message'
+    ].forEach(cookieName => {
       removeCookie(cookieName);
     });
+    
+    // Force a page reload before redirecting
     window.location.href = '/signin';
   }, []);
 
@@ -77,30 +88,14 @@ export const CurrentUserProvider = ({ children }) => {
         }
       );
 
-      // Clear user state and tokens
-      setCurrentUser(null);
-      removeTokenTimestamp();
-      
-      // Clear stored tokens
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-
-      // Clear specific authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
-        removeCookie(cookieName);
-      });
-
-      // Redirect to signin page
-      window.location.href = '/signin';
+      handleCleanup();
       
     } catch (err) {
       console.error('Logout failed:', err);
       // Attempt to clear cookies even if the logout request fails
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
-        removeCookie(cookieName);
-      });
+      handleCleanup();
     }
-  }, []);
+  }, [handleCleanup]);
 
   /**
    * Refresh access token using refresh token
