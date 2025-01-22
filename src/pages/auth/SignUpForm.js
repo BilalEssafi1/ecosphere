@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useHistory } from "react-router-dom";
 import styles from "../../styles/SignInUpForm.module.css";
 import btnStyles from "../../styles/Button.module.css";
@@ -27,10 +27,10 @@ const removeCookie = (name) => {
   
   // More comprehensive array of domain variations
   const domains = [
-    domain,                                    // exact domain
-    `.${domain}`,                             // with dot prefix
-    domain.split('.').slice(1).join('.'),     // parent domain
-    `.${domain.split('.').slice(1).join('.')}` // parent domain with dot prefix
+    domain,
+    `.${domain}`,
+    domain.split('.').slice(1).join('.'),
+    `.${domain.split('.').slice(1).join('.')}`
   ];
 
   // Array of cookie setting variations to try
@@ -62,15 +62,6 @@ const removeCookie = (name) => {
   cookieOptions.forEach(option => {
     document.cookie = option;
   });
-
-  // Debug logging - check if cookie was actually removed
-  const remainingCookie = document.cookie
-    .split(';')
-    .find(c => c.trim().startsWith(`${name}=`));
-
-  if (remainingCookie) {
-    console.warn(`Warning: Cookie '${name}' may still exist: ${remainingCookie}`);
-  }
 };
 
 const SignUpForm = () => {
@@ -81,10 +72,78 @@ const SignUpForm = () => {
     password2: "",
   });
   const { username, password1, password2 } = signUpData;
-
   const [errors, setErrors] = useState({});
+  const [csrfToken, setCsrfToken] = useState("");
 
-  const history = useHistory();
+  useEffect(() => {
+    const setupAuth = async () => {
+      console.log('Cookies before cleanup:', document.cookie);
+
+      // Clear all existing cookies first
+      const allCookies = document.cookie.split(';').map(cookie => 
+        cookie.split('=')[0].trim()
+      );
+
+      // Comprehensive list of cookies to remove
+      const authCookies = [
+        'csrftoken', 
+        'sessionid', 
+        'my-app-auth', 
+        'my-refresh-token',
+        'message',
+        'messages',
+        'cookieconsent_status',
+        'token',
+        'jwt',
+        'auth_token'
+      ];
+
+      // Remove both known auth cookies and any others found
+      [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
+        if (cookieName) {
+          console.log('Removing cookie:', cookieName);
+          removeCookie(cookieName);
+        }
+      });
+
+      console.log('Cookies after cleanup:', document.cookie);
+
+      try {
+        // Get new CSRF token
+        await axios.get("/dj-rest-auth/registration/", {
+          withCredentials: true,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+
+        // Get the token from cookies
+        const token = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('csrftoken='))
+          ?.split('=')[1];
+
+        if (token) {
+          console.log('New CSRF token acquired:', token);
+          setCsrfToken(token);
+        }
+      } catch (err) {
+        const token = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('csrftoken='))
+          ?.split('=')[1];
+
+        if (token) {
+          console.log('New CSRF token acquired from error path:', token);
+          setCsrfToken(token);
+        }
+      }
+    };
+
+    setupAuth();
+  }, []);
 
   const handleChange = (event) => {
     setSignUpData({
@@ -96,12 +155,26 @@ const SignUpForm = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      await axios.post("/dj-rest-auth/registration/", signUpData);
+      const token = csrfToken || document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      console.log('Using CSRF token for registration:', token);
+
+      await axios.post("/dj-rest-auth/registration/", signUpData, {
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': token
+        }
+      });
       
       // Debug logging
       console.log('Cookies before cleanup:', document.cookie);
 
-      // First clear tokens
+      // Clear stored tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       removeTokenTimestamp();
@@ -117,20 +190,30 @@ const SignUpForm = () => {
         'sessionid', 
         'my-app-auth', 
         'my-refresh-token',
-        'message'
+        'message',
+        'messages',
+        'cookieconsent_status',
+        'token',
+        'jwt',
+        'auth_token'
       ];
 
       // Remove both known auth cookies and any others found
       [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-        removeCookie(cookieName);
+        if (cookieName) {
+          removeCookie(cookieName);
+        }
       });
 
       console.log('Cookies after cleanup:', document.cookie);
 
-      // Force a complete page reload before redirecting
+      // Force a complete page reload and redirect
       window.location.replace('/signin');
     } catch (err) {
-      setErrors(err.response?.data);
+      console.log('Registration error:', err);
+      setErrors(err.response?.data || {
+        non_field_errors: ["Registration failed. Please try again."]
+      });
     }
   };
 
