@@ -94,36 +94,41 @@ function SignInForm() {
   * Clears old tokens and cookies before fetching new CSRF token
   */
   useEffect(() => {
-    console.log('Cookies before cleanup:', document.cookie);
-
+    // Initial cookie cleanup on component mount
+    const cleanupCookies = () => {
+      console.log('Cookies before cleanup:', document.cookie);
+      
     // Clear all existing cookies first
-    const allCookies = document.cookie.split(';').map(cookie => 
-      cookie.split('=')[0].trim()
-    );
+      const allCookies = document.cookie.split(';').map(cookie => 
+        cookie.split('=')[0].trim()
+      );
 
     // Comprehensive list of cookies to remove
-    const authCookies = [
-      'csrftoken', 
-      'sessionid', 
-      'my-app-auth', 
-      'my-refresh-token',
-      'message',
-      'messages',
-      'cookieconsent_status',
-      'token',
-      'jwt',
-      'auth_token'
-    ];
+      const authCookies = [
+        'csrftoken', 
+        'sessionid', 
+        'my-app-auth', 
+        'my-refresh-token',
+        'message',
+        'messages',
+        'cookieconsent_status',
+        'token',
+        'jwt',
+        'auth_token'
+      ];
 
     // Remove both known auth cookies and any others found
-    [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-      if (cookieName) {
-        console.log('Removing cookie:', cookieName);
-        removeCookie(cookieName);
-      }
-    });
+      [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
+        if (cookieName) {
+          console.log('Removing cookie:', cookieName);
+          removeCookie(cookieName);
+        }
+      });
 
-    console.log('Cookies after cleanup:', document.cookie);
+      console.log('Cookies after cleanup:', document.cookie);
+    };
+
+    cleanupCookies();
   }, []);
 
   /**
@@ -132,19 +137,62 @@ function SignInForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // First, get a fresh CSRF token
-      await axios.get('/dj-rest-auth/user/', {
+      // First ensure we clear any existing cookies
+      const cleanupCookies = () => {
+        const allCookies = document.cookie.split(';').map(cookie => 
+          cookie.split('=')[0].trim()
+        );
+
+        const authCookies = [
+          'csrftoken', 
+          'sessionid', 
+          'my-app-auth', 
+          'my-refresh-token',
+          'message',
+          'messages',
+          'cookieconsent_status',
+          'token',
+          'jwt',
+          'auth_token'
+        ];
+
+        [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
+          if (cookieName) {
+            removeCookie(cookieName);
+          }
+        });
+      };
+
+      cleanupCookies();
+      console.log('Cookies after initial cleanup:', document.cookie);
+
+      // Get initial CSRF token
+      const response = await axios.get('/dj-rest-auth/user/', {
         withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       });
-      
+
+      // Small delay to ensure cookie is set
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Get the CSRF token
       const token = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1];
 
+      console.log('Initial CSRF token fetch result:', token);
+
+      if (!token) {
+        throw new Error('Failed to acquire CSRF token');
+      }
+
       console.log('Using CSRF token for login:', token);
 
-      // Then attempt login with the fresh token
+      // Attempt login with the token
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         withCredentials: true,
         headers: {
@@ -167,6 +215,7 @@ function SignInForm() {
       history.push("/posts");
       
     } catch (err) {
+      console.error('Login error:', err);
       setErrors(err.response?.data || {
         non_field_errors: ["An error occurred. Please try again."],
       });
