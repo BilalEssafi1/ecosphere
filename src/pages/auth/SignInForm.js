@@ -15,59 +15,8 @@ import SignInImage from "../../assets/sign-in.jpg";
 import { useSetCurrentUser } from "../../contexts/CurrentUserContext";
 import { useRedirect } from "../../hooks/useRedirect";
 import { setTokenTimestamp } from "../../utils/utils";
+import { clearAuthCookies } from "../../contexts/CurrentUserContext";
 
-// Function to remove cookies with specific Heroku domain
-const removeCookie = (name) => {
-  // Get the current domain
-  const domain = window.location.hostname;
-  
-  // Array of paths to try
-  const paths = ['/', '/api', ''];
-  
-  // More comprehensive array of domain variations
-  const domains = [
-    domain,
-    `.${domain}`,
-    domain.split('.').slice(1).join('.'),
-    `.${domain.split('.').slice(1).join('.')}`
-  ];
-
-  // Array of cookie setting variations to try
-  const cookieOptions = [
-    // Basic removal
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
-    
-    // Try all domain and path combinations
-    ...domains.flatMap(d => 
-      paths.map(p => 
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${d}; path=${p}`
-      )
-    ),
-    
-    // Secure and SameSite variations
-    ...domains.flatMap(d => 
-      paths.map(p => 
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${d}; path=${p}; secure; samesite=none`
-      )
-    ),
-
-    // Additional variations without domain specification
-    ...paths.map(p => 
-      `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${p}`
-    )
-  ];
-
-  // Apply all cookie deletion variants
-  cookieOptions.forEach(option => {
-    document.cookie = option;
-  });
-};
-
-/**
-* SignInForm Component
-* Handles user authentication and login process
-* Includes error handling, token management, and CSRF protection
-*/
 function SignInForm() {
   const setCurrentUser = useSetCurrentUser();
   useRedirect("loggedIn");
@@ -80,52 +29,9 @@ function SignInForm() {
   const { username, password } = signInData;
   const [errors, setErrors] = useState({});
 
-  const clearAllCookies = () => {
-    console.log('Cookies before cleanup:', document.cookie);
-    
-    // Clear all existing cookies first
-    const allCookies = document.cookie.split(';').map(cookie => 
-      cookie.split('=')[0].trim()
-    );
-
-    // Comprehensive list of cookies to remove
-    const authCookies = [
-      'csrftoken', 
-      'sessionid', 
-      'my-app-auth', 
-      'my-refresh-token',
-      'message',
-      'messages',
-      'cookieconsent_status',
-      'token',
-      'jwt',
-      'auth_token'
-    ];
-
-    // Remove both known auth cookies and any others found
-    [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-      if (cookieName) {
-        console.log('Removing cookie:', cookieName);
-        removeCookie(cookieName);
-      }
-    });
-
-    console.log('Cookies after cleanup:', document.cookie);
-  };
-
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      clearAllCookies();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    // Clean up on mount
-    clearAllCookies();
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    // Clean up any existing cookies on mount
+    clearAuthCookies();
   }, []);
 
   /**
@@ -134,8 +40,8 @@ function SignInForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Clear cookies before attempting login
-      clearAllCookies();
+      // Clean up any existing cookies
+      clearAuthCookies();
       
       // Small delay to ensure cookies are cleared
       await new Promise(resolve => setTimeout(resolve, 100));
