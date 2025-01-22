@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link, useHistory } from "react-router-dom";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import styles from "../../styles/SignInUpForm.module.css";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
@@ -66,6 +66,7 @@ const removeCookie = (name) => {
 
 const SignUpForm = () => {
   useRedirect("loggedIn");
+  
   const [signUpData, setSignUpData] = useState({
     username: "",
     password1: "",
@@ -73,10 +74,20 @@ const SignUpForm = () => {
   });
   const { username, password1, password2 } = signUpData;
   const [errors, setErrors] = useState({});
-  const [csrfToken, setCsrfToken] = useState("");
 
-  useEffect(() => {
-    const setupAuth = async () => {
+  const handleChange = (event) => {
+    setSignUpData({
+      ...signUpData,
+      [event.target.name]: event.target.value,
+    });
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      // Perform the signup request
+      await axios.post("/dj-rest-auth/registration/", signUpData);
+      
       console.log('Cookies before cleanup:', document.cookie);
 
       // Clear all existing cookies first
@@ -84,7 +95,7 @@ const SignUpForm = () => {
         cookie.split('=')[0].trim()
       );
 
-      // Comprehensive list of cookies to remove
+      // Full list of cookies to remove
       const authCookies = [
         'csrftoken', 
         'sessionid', 
@@ -108,112 +119,11 @@ const SignUpForm = () => {
 
       console.log('Cookies after cleanup:', document.cookie);
 
-      try {
-        // Get new CSRF token
-        await axios.get("/dj-rest-auth/registration/", {
-          withCredentials: true,
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        });
-
-        // Get the token from cookies
-        const token = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('csrftoken='))
-          ?.split('=')[1];
-
-        if (token) {
-          console.log('New CSRF token acquired:', token);
-          setCsrfToken(token);
-        }
-      } catch (err) {
-        const token = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('csrftoken='))
-          ?.split('=')[1];
-
-        if (token) {
-          console.log('New CSRF token acquired from error path:', token);
-          setCsrfToken(token);
-        }
-      }
-    };
-
-    setupAuth();
-  }, []);
-
-  const handleChange = (event) => {
-    setSignUpData({
-      ...signUpData,
-      [event.target.name]: event.target.value,
-    });
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      const token = csrfToken || document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-
-      console.log('Using CSRF token for registration:', token);
-
-      await axios.post("/dj-rest-auth/registration/", signUpData, {
-        withCredentials: true,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-CSRFToken': token
-        }
-      });
-      
-      // Debug logging
-      console.log('Cookies before cleanup:', document.cookie);
-
-      // Clear stored tokens
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      removeTokenTimestamp();
-
-      // Get all existing cookies
-      const allCookies = document.cookie.split(';').map(cookie => 
-        cookie.split('=')[0].trim()
-      );
-
-      // Clear all authentication cookies
-      const authCookies = [
-        'csrftoken', 
-        'sessionid', 
-        'my-app-auth', 
-        'my-refresh-token',
-        'message',
-        'messages',
-        'cookieconsent_status',
-        'token',
-        'jwt',
-        'auth_token'
-      ];
-
-      // Remove both known auth cookies and any others found
-      [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-        if (cookieName) {
-          removeCookie(cookieName);
-        }
-      });
-
-      console.log('Cookies after cleanup:', document.cookie);
-
-      // Force a complete page reload and redirect
-      window.location.replace('/signin');
+      // Instead of using history.push, use replaceState and reload
+      window.history.replaceState({}, '', '/signin');
+      window.location.reload();
     } catch (err) {
-      console.log('Registration error:', err);
-      setErrors(err.response?.data || {
-        non_field_errors: ["Registration failed. Please try again."]
-      });
+      setErrors(err.response?.data);
     }
   };
 

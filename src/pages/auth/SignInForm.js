@@ -80,46 +80,52 @@ function SignInForm() {
   const { username, password } = signInData;
   const [errors, setErrors] = useState({});
 
- /**
-  * Effect to handle CSRF token setup
-  * Clears old tokens and cookies before fetching new CSRF token
-  */
-  useEffect(() => {
-    // Initial cookie cleanup on component mount
-    const cleanupCookies = () => {
-      console.log('Cookies before cleanup:', document.cookie);
-      
+  const clearAllCookies = () => {
+    console.log('Cookies before cleanup:', document.cookie);
+    
     // Clear all existing cookies first
-      const allCookies = document.cookie.split(';').map(cookie => 
-        cookie.split('=')[0].trim()
-      );
+    const allCookies = document.cookie.split(';').map(cookie => 
+      cookie.split('=')[0].trim()
+    );
 
     // Comprehensive list of cookies to remove
-      const authCookies = [
-        'csrftoken', 
-        'sessionid', 
-        'my-app-auth', 
-        'my-refresh-token',
-        'message',
-        'messages',
-        'cookieconsent_status',
-        'token',
-        'jwt',
-        'auth_token'
-      ];
+    const authCookies = [
+      'csrftoken', 
+      'sessionid', 
+      'my-app-auth', 
+      'my-refresh-token',
+      'message',
+      'messages',
+      'cookieconsent_status',
+      'token',
+      'jwt',
+      'auth_token'
+    ];
 
     // Remove both known auth cookies and any others found
-      [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-        if (cookieName) {
-          console.log('Removing cookie:', cookieName);
-          removeCookie(cookieName);
-        }
-      });
+    [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
+      if (cookieName) {
+        console.log('Removing cookie:', cookieName);
+        removeCookie(cookieName);
+      }
+    });
 
-      console.log('Cookies after cleanup:', document.cookie);
+    console.log('Cookies after cleanup:', document.cookie);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      clearAllCookies();
     };
 
-    cleanupCookies();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Clean up on mount
+    clearAllCookies();
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   /**
@@ -128,33 +134,11 @@ function SignInForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Clean up any existing cookies first
-      const cleanupCookies = () => {
-        const allCookies = document.cookie.split(';').map(cookie => 
-          cookie.split('=')[0].trim()
-        );
-
-        const authCookies = [
-          'csrftoken', 
-          'sessionid', 
-          'my-app-auth', 
-          'my-refresh-token',
-          'message',
-          'messages',
-          'cookieconsent_status',
-          'token',
-          'jwt',
-          'auth_token'
-        ];
-
-        [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-          if (cookieName) {
-            removeCookie(cookieName);
-          }
-        });
-      };
-
-      cleanupCookies();
+      // Clear cookies before attempting login
+      clearAllCookies();
+      
+      // Small delay to ensure cookies are cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Make the login request directly
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
