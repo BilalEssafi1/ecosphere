@@ -5,23 +5,58 @@ import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
 // Function to remove cookies with specific Heroku domain
 const removeCookie = (name) => {
-  // Target the specific herokuapp.com domain and its subdomain
+  // Get the current domain
+  const domain = window.location.hostname;
+  
+  // Array of paths to try
+  const paths = ['/', '/api', ''];
+  
+  // More comprehensive array of domain variations
+  const domains = [
+    domain,
+    `.${domain}`,
+    domain.split('.').slice(1).join('.'),
+    `.${domain.split('.').slice(1).join('.')}`
+  ];
+
+  // Array of cookie setting variations to try
   const cookieOptions = [
-    // Root domain with specific path
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
-    // Handle the .herokuapp.com domain
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-    // Without domain specification
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
-    // With secure and SameSite attributes
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
+    // Basic removal
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+    
+    // Try all domain and path combinations
+    ...domains.flatMap(d => 
+      paths.map(p => 
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${d}; path=${p}`
+      )
+    ),
+    
+    // Secure and SameSite variations
+    ...domains.flatMap(d => 
+      paths.map(p => 
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${d}; path=${p}; secure; samesite=none`
+      )
+    ),
+
+    // Additional variations without domain specification
+    ...paths.map(p => 
+      `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${p}`
+    )
   ];
 
   // Apply all cookie deletion variants
   cookieOptions.forEach(option => {
     document.cookie = option;
   });
+
+  // Debug logging - check if cookie was actually removed
+  const remainingCookie = document.cookie
+    .split(';')
+    .find(c => c.trim().startsWith(`${name}=`));
+
+  if (remainingCookie) {
+    console.warn(`Warning: Cookie '${name}' may still exist: ${remainingCookie}`);
+  }
 };
 
 /**
@@ -43,24 +78,39 @@ export const CurrentUserProvider = ({ children }) => {
    * Handle clean logout and cleanup of auth data
    */
   const handleCleanup = useCallback(() => {
+    // First, get a list of all cookies
+    const allCookies = document.cookie.split(';').map(cookie => 
+      cookie.split('=')[0].trim()
+    );
+
+    console.log('Cookies before cleanup:', document.cookie);
+
+    // Clear user state
     setCurrentUser(null);
+    
+    // Clear localStorage
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     removeTokenTimestamp();
-    
-    // Remove all authentication-related cookies
-    [
+
+    // Remove all known authentication cookies
+    const authCookies = [
       'csrftoken', 
       'sessionid', 
       'my-app-auth', 
       'my-refresh-token',
       'message'
-    ].forEach(cookieName => {
+    ];
+
+    // Try to remove both known auth cookies and any other cookies found
+    [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
       removeCookie(cookieName);
     });
-    
-    // Force a page reload before redirecting
-    window.location.href = '/signin';
+
+    console.log('Cookies after cleanup:', document.cookie);
+
+    // Force a complete page reload before redirecting
+    window.location.replace('/signin');
   }, []);
 
   /**

@@ -17,6 +17,62 @@ import { useSetCurrentUser } from "../../contexts/CurrentUserContext";
 import { useRedirect } from "../../hooks/useRedirect";
 import { setTokenTimestamp } from "../../utils/utils";
 
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+  // Get the current domain
+  const domain = window.location.hostname;
+  
+  // Array of paths to try
+  const paths = ['/', '/api', ''];
+  
+  // More comprehensive array of domain variations
+  const domains = [
+    domain,
+    `.${domain}`,
+    domain.split('.').slice(1).join('.'),
+    `.${domain.split('.').slice(1).join('.')}`
+  ];
+
+  // Array of cookie setting variations to try
+  const cookieOptions = [
+    // Basic removal
+    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+    
+    // Try all domain and path combinations
+    ...domains.flatMap(d => 
+      paths.map(p => 
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${d}; path=${p}`
+      )
+    ),
+    
+    // Secure and SameSite variations
+    ...domains.flatMap(d => 
+      paths.map(p => 
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${d}; path=${p}; secure; samesite=none`
+      )
+    ),
+
+    // Additional variations without domain specification
+    ...paths.map(p => 
+      `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${p}`
+    )
+  ];
+
+  // Apply all cookie deletion variants
+  cookieOptions.forEach(option => {
+    document.cookie = option;
+  });
+
+  // Debug logging - check if cookie was actually removed
+  const remainingCookie = document.cookie
+    .split(';')
+    .find(c => c.trim().startsWith(`${name}=`));
+
+  if (remainingCookie) {
+    console.warn(`Warning: Cookie '${name}' may still exist: ${remainingCookie}`);
+  }
+};
+
 /**
 * SignInForm Component
 * Handles user authentication and login process
@@ -36,13 +92,37 @@ function SignInForm() {
 
  /**
   * Effect to handle CSRF token setup
-  * Clears old token and fetches new one on component mount
+  * Clears old tokens and cookies before fetching new CSRF token
   */
  useEffect(() => {
-   // Clear old CSRF token and fetch new one
-   Cookies.remove('csrftoken');
+   // Debug logging
+   console.log('Cookies before cleanup:', document.cookie);
+
+   // Get all existing cookies
+   const allCookies = document.cookie.split(';').map(cookie => 
+     cookie.split('=')[0].trim()
+   );
+
+   // Clear all authentication cookies
+   const authCookies = [
+     'csrftoken', 
+     'sessionid', 
+     'my-app-auth', 
+     'my-refresh-token',
+     'message'
+   ];
+
+   // Remove both known auth cookies and any others found
+   [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
+     removeCookie(cookieName);
+   });
+
+   console.log('Cookies after cleanup:', document.cookie);
+
+   // Fetch new CSRF token
    axios.get('/dj-rest-auth/user/', { withCredentials: true })
      .catch(() => {
+       // Ignore error as this is expected for non-authenticated users
      });
  }, []);
 
