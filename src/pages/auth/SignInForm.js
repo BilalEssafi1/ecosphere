@@ -61,15 +61,6 @@ const removeCookie = (name) => {
   cookieOptions.forEach(option => {
     document.cookie = option;
   });
-
-  // Debug logging - check if cookie was actually removed
-  const remainingCookie = document.cookie
-    .split(';')
-    .find(c => c.trim().startsWith(`${name}=`));
-
-  if (remainingCookie) {
-    console.warn(`Warning: Cookie '${name}' may still exist: ${remainingCookie}`);
-  }
 };
 
 /**
@@ -137,7 +128,7 @@ function SignInForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // First ensure we clear any existing cookies
+      // Clean up any existing cookies first
       const cleanupCookies = () => {
         const allCookies = document.cookie.split(';').map(cookie => 
           cookie.split('=')[0].trim()
@@ -164,41 +155,12 @@ function SignInForm() {
       };
 
       cleanupCookies();
-      console.log('Cookies after initial cleanup:', document.cookie);
 
-      // Get initial CSRF token
-      const response = await axios.get('/dj-rest-auth/user/', {
-        withCredentials: true,
+      // Make the login request directly
+      const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
-        }
-      });
-
-      // Small delay to ensure cookie is set
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Get the CSRF token
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-
-      console.log('Initial CSRF token fetch result:', token);
-
-      if (!token) {
-        throw new Error('Failed to acquire CSRF token');
-      }
-
-      console.log('Using CSRF token for login:', token);
-
-      // Attempt login with the token
-      const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
-        withCredentials: true,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-CSRFToken': token
         }
       });
 
