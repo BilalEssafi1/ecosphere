@@ -79,189 +79,214 @@ const removeCookie = (name) => {
 * Includes error handling, token management, and CSRF protection
 */
 function SignInForm() {
- const setCurrentUser = useSetCurrentUser();
- useRedirect("loggedIn");
- const history = useHistory();
+  const setCurrentUser = useSetCurrentUser();
+  useRedirect("loggedIn");
+  const history = useHistory();
+  const [csrfToken, setCsrfToken] = useState("");
 
- const [signInData, setSignInData] = useState({
-   username: "",
-   password: "",
- });
- const { username, password } = signInData;
- const [errors, setErrors] = useState({});
+  const [signInData, setSignInData] = useState({
+    username: "",
+    password: "",
+  });
+  const { username, password } = signInData;
+  const [errors, setErrors] = useState({});
 
  /**
   * Effect to handle CSRF token setup
   * Clears old tokens and cookies before fetching new CSRF token
   */
- useEffect(() => {
-   // Debug logging
-   console.log('Cookies before cleanup:', document.cookie);
+  useEffect(() => {
+    const setupAuth = async () => {
+      console.log('Cookies before cleanup:', document.cookie);
+      
+      // Clear all existing cookies
+      const allCookies = document.cookie.split(';').map(cookie => 
+        cookie.split('=')[0].trim()
+      );
 
-   // Get all existing cookies
-   const allCookies = document.cookie.split(';').map(cookie => 
-     cookie.split('=')[0].trim()
-   );
+      // Comprehensive list of cookies to remove
+      const authCookies = [
+        'csrftoken', 
+        'sessionid', 
+        'my-app-auth', 
+        'my-refresh-token',
+        'message',
+        'messages',  // Added additional message cookie variant
+        'cookieconsent_status',
+        'token',
+        'jwt',
+        'auth_token'
+      ];
 
-   // Clear all authentication cookies
-   const authCookies = [
-     'csrftoken', 
-     'sessionid', 
-     'my-app-auth', 
-     'my-refresh-token',
-     'message'
-   ];
+      // Remove both known auth cookies and any others found
+      [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
+        if (cookieName) {  // Only process non-empty cookie names
+          console.log('Removing cookie:', cookieName);
+          removeCookie(cookieName);
+        }
+      });
 
-   // Remove both known auth cookies and any others found
-   [...new Set([...authCookies, ...allCookies])].forEach(cookieName => {
-     removeCookie(cookieName);
-   });
+      console.log('Cookies after cleanup:', document.cookie);
 
-   console.log('Cookies after cleanup:', document.cookie);
+      try {
+        // Get CSRF token with explicit credentials and headers
+        const response = await axios.get('/dj-rest-auth/user/', {
+          withCredentials: true,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        const token = Cookies.get('csrftoken');
+        if (token) {
+          setCsrfToken(token);
+          console.log('New CSRF token acquired');
+        }
+      } catch (err) {
+        // Expected 401 for non-authenticated users
+        const token = Cookies.get('csrftoken');
+        if (token) {
+          setCsrfToken(token);
+          console.log('New CSRF token acquired from error path');
+        }
+      }
+    };
 
-   // Fetch new CSRF token
-   axios.get('/dj-rest-auth/user/', { withCredentials: true })
-     .catch(() => {
-       // Ignore error as this is expected for non-authenticated users
-     });
- }, []);
+    setupAuth();
+  }, []);
 
- /**
-  * Handles form submission for user login
-  * Includes CSRF token and authentication token management
-  */
- const handleSubmit = async (event) => {
-   event.preventDefault();
-   try {
-     // Make login request with CSRF token
-     const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
-       withCredentials: true,
-       headers: {
-         "Content-Type": "application/json",
-         "X-CSRFToken": Cookies.get('csrftoken'),
-       },
-     });
+  /**
+   * Handles form submission for user login
+   */
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const token = csrfToken || Cookies.get('csrftoken');
+      console.log('Using CSRF token for login:', token);
+      
+      // Make login request with CSRF token
+      const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': token
+        }
+      });
 
-     // Handle successful login
-     if (data.access) {
-       localStorage.setItem("access_token", data.access);
-     }
-     if (data.refresh) {
-       localStorage.setItem("refresh_token", data.refresh);
-     }
+      // Handle successful login
+      if (data.access) {
+        localStorage.setItem("access_token", data.access);
+      }
+      if (data.refresh) {
+        localStorage.setItem("refresh_token", data.refresh);
+      }
 
      // Update user context and redirect
-     setCurrentUser(data.user);
-     setTokenTimestamp(data);
-     history.push("/posts");
-     
-   } catch (err) {
-     setErrors(err.response?.data || {
-       non_field_errors: ["An error occurred. Please try again."],
-     });
-   }
- };
+      setCurrentUser(data.user);
+      setTokenTimestamp(data);
+      history.push("/posts");
+      
+    } catch (err) {
+      setErrors(err.response?.data || {
+        non_field_errors: ["An error occurred. Please try again."],
+      });
+    }
+  };
 
  /**
   * Handles form input changes
   * Updates form state as user types
   */
- const handleChange = (event) => {
-   setSignInData({
-     ...signInData,
-     [event.target.name]: event.target.value,
-   });
- };
+  const handleChange = (event) => {
+    setSignInData({
+      ...signInData,
+      [event.target.name]: event.target.value,
+    });
+  };
 
- return (
-   <Row className={styles.Row}>
-     {/* Form Column */}
-     <Col className="my-auto p-0 p-md-2" md={6}>
-       <Container className={`${appStyles.Content} p-4`}>
-         <h1 className={styles.Header}>Sign In</h1>
-         
-         <Form onSubmit={handleSubmit}>
-           {/* Username Field */}
-           <Form.Group controlId="username">
-             <Form.Label className="d-none">Username</Form.Label>
-             <Form.Control
-               type="text"
-               placeholder="Username"
-               name="username"
-               className={styles.Input}
-               value={username}
-               onChange={handleChange}
-             />
-           </Form.Group>
-           {/* Username Errors */}
-           {errors.username?.map((message, idx) => (
-             <Alert key={idx} variant="warning">
-               {message}
-             </Alert>
-           ))}
+  return (
+    <Row className={styles.Row}>
+      <Col className="my-auto p-0 p-md-2" md={6}>
+        <Container className={`${appStyles.Content} p-4`}>
+          <h1 className={styles.Header}>Sign In</h1>
+          
+          <Form onSubmit={handleSubmit}>
+            <Form.Group controlId="username">
+              <Form.Label className="d-none">Username</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Username"
+                name="username"
+                className={styles.Input}
+                value={username}
+                onChange={handleChange}
+              />
+            </Form.Group>
+            {errors.username?.map((message, idx) => (
+              <Alert key={idx} variant="warning">
+                {message}
+              </Alert>
+            ))}
 
-           {/* Password Field */}
-           <Form.Group controlId="password">
-             <Form.Label className="d-none">Password</Form.Label>
-             <Form.Control
-               type="password"
-               placeholder="Password"
-               name="password"
-               className={styles.Input}
-               value={password}
-               onChange={handleChange}
-             />
-           </Form.Group>
-           {/* Password Errors */}
-           {errors.password?.map((message, idx) => (
-             <Alert key={idx} variant="warning">
-               {message}
-             </Alert>
-           ))}
+            <Form.Group controlId="password">
+              <Form.Label className="d-none">Password</Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Password"
+                name="password"
+                className={styles.Input}
+                value={password}
+                onChange={handleChange}
+              />
+            </Form.Group>
+            {errors.password?.map((message, idx) => (
+              <Alert key={idx} variant="warning">
+                {message}
+              </Alert>
+            ))}
 
-           {/* Submit Button */}
-           <Button
-             className={`${btnStyles.Button} ${btnStyles.Wide} ${btnStyles.Bright}`}
-             type="submit"
-           >
-             Sign In
-           </Button>
+            <Button
+              className={`${btnStyles.Button} ${btnStyles.Wide} ${btnStyles.Bright}`}
+              type="submit"
+            >
+              Sign In
+            </Button>
 
-           {/* General Form Errors */}
-           {errors.non_field_errors?.map((message, idx) => (
-             <Alert key={idx} variant="warning" className="mt-3">
-               {message}
-             </Alert>
-           ))}
-         </Form>
-       </Container>
+            {errors.non_field_errors?.map((message, idx) => (
+              <Alert key={idx} variant="warning" className="mt-3">
+                {message}
+              </Alert>
+            ))}
+          </Form>
+        </Container>
 
-       {/* Sign Up Link */}
-       <Container className={`mt-3 ${appStyles.Content}`}>
-         <Link className={styles.Link} to="/signup">
-           Don't have an account? <span>Sign up now!</span>
-         </Link>
-       </Container>
-     </Col>
+        <Container className={`mt-3 ${appStyles.Content}`}>
+          <Link className={styles.Link} to="/signup">
+            Don't have an account? <span>Sign up now!</span>
+          </Link>
+        </Container>
+      </Col>
 
-     {/* Image Column */}
-     <Col
-       md={6}
-       className={`my-auto d-none d-md-block p-2 ${styles.SignInCol}`}
-     >
-       <Image
-         className={`${appStyles.FillerImage}`}
-         src={SignInImage}
-         style={{
-           width: "100%",
-           maxWidth: "700px",
-           height: "100%",
-           maxHeight: "350px",
-         }}
-       />
-     </Col>
-   </Row>
- );
+      <Col
+        md={6}
+        className={`my-auto d-none d-md-block p-2 ${styles.SignInCol}`}
+      >
+        <Image
+          className={`${appStyles.FillerImage}`}
+          src={SignInImage}
+          style={{
+            width: "100%",
+            maxWidth: "700px",
+            height: "100%",
+            maxHeight: "350px",
+          }}
+        />
+      </Col>
+    </Row>
+  );
 }
 
 export default SignInForm;
