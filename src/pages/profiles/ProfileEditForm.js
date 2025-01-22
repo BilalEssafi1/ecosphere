@@ -20,7 +20,7 @@ import { clearAuthCookies } from "../../contexts/CurrentUserContext";
 
 function ProfileEditForm() {
   const currentUser = useCurrentUser();
-  const { setCurrentUser } = useSetCurrentUser();
+  const { setCurrentUser, handleLogout } = useSetCurrentUser();
   const { id } = useParams();
   const history = useHistory();
   const imageFile = useRef();
@@ -100,7 +100,8 @@ function ProfileEditForm() {
 
   /**
    * Handles account deletion
-   * Removes user profile, clears authentication, and redirects to signin
+   * First deletes profile and then performs complete logout
+   * Uses shared handleLogout for consistent cleanup
    */
   const handleDelete = async () => {
     if (isDeleting) return;
@@ -109,22 +110,16 @@ function ProfileEditForm() {
       // Get current token
       const token = localStorage.getItem('access_token');
       
+      // First delete the profile
       await axiosReq.delete(`/profiles/${id}/`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
 
-      setCurrentUser(null);
+      // Use shared logout handler for consistent cleanup
+      await handleLogout();
       
-      // Clear auth state
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      removeTokenTimestamp();
-      clearAuthCookies();
-
-      // Redirect to signin
-      window.location.replace('/signin');
     } catch (err) {
       setErrors({ delete: ["Failed to delete account. Please try again."] });
       setIsDeleting(false);
