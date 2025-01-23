@@ -10,231 +10,274 @@ import Alert from "react-bootstrap/Alert";
 import Modal from "react-bootstrap/Modal";
 import { axiosReq } from "../../api/axiosDefaults";
 import {
-  useCurrentUser,
-  useSetCurrentUser,
+ useCurrentUser,
+ useSetCurrentUser,
 } from "../../contexts/CurrentUserContext";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
-import { clearAuthData } from "../../utils/auth";
+
+
+// Function to remove cookies with specific Heroku domain
+const removeCookie = (name) => {
+ // Target the specific herokuapp.com domain and its subdomain
+ const cookieOptions = [
+   // Root domain with specific path
+   `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+   // Handle the .herokuapp.com domain
+   `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+   // Without domain specification
+   `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+   // With secure and SameSite attributes
+   `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
+   `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
+ ];
+
+
+ // Apply all cookie deletion variants
+ cookieOptions.forEach(option => {
+   document.cookie = option;
+ });
+};
+
 
 function ProfileEditForm() {
-  const currentUser = useCurrentUser();
-  const setCurrentUser = useSetCurrentUser();
-  const { id } = useParams();
-  const history = useHistory();
-  const imageFile = useRef();
+ const currentUser = useCurrentUser();
+ const setCurrentUser = useSetCurrentUser();
+ const { id } = useParams();
+ const history = useHistory();
+ const imageFile = useRef();
 
-  // State for managing profile data and UI states
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: "",
-    content: "",
-    image: "",
-  });
-  const { name, content, image } = profileData;
-  const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    /**
-     * Handles component mount
-     * Fetches profile data if user is authorized
-     */
-    const handleMount = async () => {
-      // Verify current user owns this profile
-      if (currentUser?.profile_id?.toString() === id) {
-        try {
-          const { data } = await axiosReq.get(`/profiles/${id}/`);
-          const { name, content, image } = data;
-          setProfileData({ name, content, image });
-        } catch (err) {
-          history.push("/");
-        }
-      } else {
-        // Redirect if unauthorized
-        history.push("/");
-      }
-    };
+ // State for managing profile data and UI states
+ const [showDeleteModal, setShowDeleteModal] = useState(false);
+ const [isDeleting, setIsDeleting] = useState(false);
+ const [profileData, setProfileData] = useState({
+   name: "",
+   content: "",
+   image: "",
+ });
+ const { name, content, image } = profileData;
+ const [errors, setErrors] = useState({});
 
-    handleMount();
-  }, [currentUser, history, id]);
 
-  /**
-   * Handles changes to form input fields
-   * Updates profileData state with new values
-   */
-  const handleChange = (event) => {
-    setProfileData({
-      ...profileData,
-      [event.target.name]: event.target.value,
-    });
-  };
+ useEffect(() => {
+   /**
+    * Handles component mount
+    * Fetches profile data if user is authorized
+    */
+   const handleMount = async () => {
+     // Verify current user owns this profile
+     if (currentUser?.profile_id?.toString() === id) {
+       try {
+         const { data } = await axiosReq.get(`/profiles/${id}/`);
+         const { name, content, image } = data;
+         setProfileData({ name, content, image });
+       } catch (err) {
+         history.push("/");
+       }
+     } else {
+       // Redirect if unauthorized
+       history.push("/");
+     }
+   };
 
-  /**
-   * Handles form submission for profile updates
-   * Sends updated profile data to the server
-   */
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("content", content);
 
-    if (imageFile?.current?.files[0]) {
-      formData.append("image", imageFile?.current?.files[0]);
-    }
+   handleMount();
+ }, [currentUser, history, id]);
 
-    try {
-      const { data } = await axiosReq.put(`/profiles/${id}/`, formData);
-      setCurrentUser((currentUser) => ({
-        ...currentUser,
-        profile_image: data.image,
-      }));
-      history.goBack();
-    } catch (err) {
-      console.log(err);
-      setErrors(err.response?.data);
-    }
-  };
 
-  /**
-   * Handles account deletion
-   * Removes user profile, clears authentication, and redirects to signin
-   */
-  const handleDelete = async () => {
-    if (isDeleting) return;
-    setIsDeleting(true);
-    try {
-      await axiosReq.delete(`/profiles/${id}/`);
-      setCurrentUser(null);
-      
-      // Clear auth data including cookies
-      clearAuthData(true);
-      
-      // Force page reload after short delay
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
-    } catch (err) {
-      setErrors({ delete: ["Failed to delete account. Please try again."] });
-      setIsDeleting(false);
-    }
-  };
+ /**
+  * Handles changes to form input fields
+  * Updates profileData state with new values
+  */
+ const handleChange = (event) => {
+   setProfileData({
+     ...profileData,
+     [event.target.name]: event.target.value,
+   });
+ };
 
-  const textFields = (
-    <>
-      <Form.Group>
-        <Form.Label>Bio</Form.Label>
-        <Form.Control
-          as="textarea"
-          value={content}
-          onChange={handleChange}
-          name="content"
-          rows={7}
-        />
-      </Form.Group>
 
-      {errors?.content?.map((message, idx) => (
-        <Alert variant="warning" key={idx}>
-          {message}
-        </Alert>
-      ))}
-      <Button
-        className={`${btnStyles.Button} ${btnStyles.Blue}`}
-        onClick={() => history.goBack()}
-      >
-        cancel
-      </Button>
-      <Button className={`${btnStyles.Button} ${btnStyles.Blue}`} type="submit">
-        save
-      </Button>
-      <Button
-        className={`${btnStyles.Button} ${btnStyles.Danger}`}
-        onClick={() => setShowDeleteModal(true)}
-      >
-        Delete account
-      </Button>
-    </>
-  );
+ /**
+  * Handles form submission for profile updates
+  * Sends updated profile data to the server
+  */
+ const handleSubmit = async (event) => {
+   event.preventDefault();
+   const formData = new FormData();
+   formData.append("name", name);
+   formData.append("content", content);
 
-  return (
-    <Form onSubmit={handleSubmit}>
-      <Row>
-        <Col className="py-2 p-0 p-md-2 text-center" md={7} lg={6}>
-          <Container className={appStyles.Content}>
-            <Form.Group>
-              {image && (
-                <figure>
-                  <Image src={image} fluid />
-                </figure>
-              )}
-              {errors?.image?.map((message, idx) => (
-                <Alert variant="warning" key={idx}>
-                  {message}
-                </Alert>
-              ))}
-              <div>
-                <Form.Label
-                  className={`${btnStyles.Button} ${btnStyles.Blue} btn my-auto`}
-                  htmlFor="image-upload"
-                >
-                  Change the image
-                </Form.Label>
-              </div>
-              <Form.File
-                id="image-upload"
-                ref={imageFile}
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files.length) {
-                    setProfileData({
-                      ...profileData,
-                      image: URL.createObjectURL(e.target.files[0]),
-                    });
-                  }
-                }}
-              />
-            </Form.Group>
-            <div className="d-md-none">{textFields}</div>
-          </Container>
-        </Col>
-        <Col md={5} lg={6} className="d-none d-md-block p-0 p-md-2 text-center">
-          <Container className={appStyles.Content}>{textFields}</Container>
-        </Col>
-      </Row>
 
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Delete Account</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {errors?.delete?.map((message, idx) => (
-            <Alert variant="danger" key={idx}>
-              {message}
-            </Alert>
-          ))}
-          <p>Are you sure you want to delete your account?</p>
-          <p className="text-danger">This action cannot be undone.</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowDeleteModal(false)}
-            disabled={isDeleting}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Form>
-  );
+   if (imageFile?.current?.files[0]) {
+     formData.append("image", imageFile?.current?.files[0]);
+   }
+
+
+   try {
+     const { data } = await axiosReq.put(`/profiles/${id}/`, formData);
+     setCurrentUser((currentUser) => ({
+       ...currentUser,
+       profile_image: data.image,
+     }));
+     history.goBack();
+   } catch (err) {
+     console.log(err);
+     setErrors(err.response?.data);
+   }
+ };
+
+
+ /**
+  * Handles account deletion
+  * Removes user profile, clears authentication, and redirects to signin
+  */
+ const handleDelete = async () => {
+   if (isDeleting) return;
+   setIsDeleting(true);
+   try {
+     await axiosReq.delete(`/profiles/${id}/`);
+     // Clear all user data and authentication
+     setCurrentUser(null);
+    
+     // First clear tokens
+     localStorage.removeItem('access_token');
+     localStorage.removeItem('refresh_token');
+
+
+     // Clear all authentication cookies
+     ['csrftoken', 'sessionid'].forEach(cookieName => {
+       removeCookie(cookieName);
+     });
+
+
+     // Force a page reload before redirecting
+     window.location.href = '/signin';
+   } catch (err) {
+     setErrors({ delete: ["Failed to delete account. Please try again."] });
+     setIsDeleting(false);
+   }
+ };
+
+
+ const textFields = (
+   <>
+     <Form.Group>
+       <Form.Label>Bio</Form.Label>
+       <Form.Control
+         as="textarea"
+         value={content}
+         onChange={handleChange}
+         name="content"
+         rows={7}
+       />
+     </Form.Group>
+
+
+     {errors?.content?.map((message, idx) => (
+       <Alert variant="warning" key={idx}>
+         {message}
+       </Alert>
+     ))}
+     <Button
+       className={`${btnStyles.Button} ${btnStyles.Blue}`}
+       onClick={() => history.goBack()}
+     >
+       cancel
+     </Button>
+     <Button className={`${btnStyles.Button} ${btnStyles.Blue}`} type="submit">
+       save
+     </Button>
+     <Button
+       className={`${btnStyles.Button} ${btnStyles.Danger}`}
+       onClick={() => setShowDeleteModal(true)}
+     >
+       Delete account
+     </Button>
+   </>
+ );
+
+
+ return (
+   <Form onSubmit={handleSubmit}>
+     <Row>
+       <Col className="py-2 p-0 p-md-2 text-center" md={7} lg={6}>
+         <Container className={appStyles.Content}>
+           <Form.Group>
+             {image && (
+               <figure>
+                 <Image src={image} fluid />
+               </figure>
+             )}
+             {errors?.image?.map((message, idx) => (
+               <Alert variant="warning" key={idx}>
+                 {message}
+               </Alert>
+             ))}
+             <div>
+               <Form.Label
+                 className={`${btnStyles.Button} ${btnStyles.Blue} btn my-auto`}
+                 htmlFor="image-upload"
+               >
+                 Change the image
+               </Form.Label>
+             </div>
+             <Form.File
+               id="image-upload"
+               ref={imageFile}
+               accept="image/*"
+               onChange={(e) => {
+                 if (e.target.files.length) {
+                   setProfileData({
+                     ...profileData,
+                     image: URL.createObjectURL(e.target.files[0]),
+                   });
+                 }
+               }}
+             />
+           </Form.Group>
+           <div className="d-md-none">{textFields}</div>
+         </Container>
+       </Col>
+       <Col md={5} lg={6} className="d-none d-md-block p-0 p-md-2 text-center">
+         <Container className={appStyles.Content}>{textFields}</Container>
+       </Col>
+     </Row>
+
+
+     <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+       <Modal.Header closeButton>
+         <Modal.Title>Delete Account</Modal.Title>
+       </Modal.Header>
+       <Modal.Body>
+         {errors?.delete?.map((message, idx) => (
+           <Alert variant="danger" key={idx}>
+             {message}
+           </Alert>
+         ))}
+         <p>Are you sure you want to delete your account?</p>
+         <p className="text-danger">This action cannot be undone.</p>
+       </Modal.Body>
+       <Modal.Footer>
+         <Button
+           variant="secondary"
+           onClick={() => setShowDeleteModal(false)}
+           disabled={isDeleting}
+         >
+           Cancel
+         </Button>
+         <Button
+           variant="danger"
+           onClick={handleDelete}
+           disabled={isDeleting}
+         >
+           {isDeleting ? "Deleting..." : "Delete"}
+         </Button>
+       </Modal.Footer>
+     </Modal>
+   </Form>
+ );
 }
+
 
 export default ProfileEditForm;
