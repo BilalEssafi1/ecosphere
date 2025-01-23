@@ -11,27 +11,7 @@ import Avatar from "./Avatar";
 import axios from "axios";
 import useClickOutsideToggle from "../hooks/useClickOutsideToggle";
 import { removeTokenTimestamp } from "../utils/utils";
-
-// Function to remove cookies with specific Heroku domain
-const removeCookie = (name) => {
-  // Target the specific herokuapp.com domain and its subdomain
-  const cookieOptions = [
-    // Root domain with specific path
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
-    // Handle the .herokuapp.com domain
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-    // Without domain specification
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
-    // With secure and SameSite attributes
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
-  ];
-
-  // Apply all cookie deletion variants
-  cookieOptions.forEach(option => {
-    document.cookie = option;
-  });
-};
+import { clearAuthData } from "../utils/auth";
 
 const NavBar = () => {
   // Get current user and setter from context
@@ -48,13 +28,11 @@ const NavBar = () => {
    */
   const handleSignOut = async () => {
     try {
-      // Get CSRF token from cookies
       const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1];
 
-      // Make logout request with CSRF token
       await axios.post(
         "/dj-rest-auth/logout/",
         {},
@@ -68,28 +46,13 @@ const NavBar = () => {
         }
       );
 
-      // Clear user state and tokens
       setCurrentUser(null);
       removeTokenTimestamp();
-      
-      // Clear stored tokens
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-
-      // Clear specific authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
-        removeCookie(cookieName);
-      });
-
-      // Force reload to signin page for clean state
-      window.location.href = '/signin';
+      clearAuthData();
       
     } catch (err) {
       console.error('Logout failed:', err);
-      // Attempt to clear cookies even if the logout request fails
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
-        removeCookie(cookieName);
-      });
+      clearAuthData();
     }
   };
 
@@ -121,7 +84,6 @@ const NavBar = () => {
       >
         <i className="fas fa-heart"></i>Liked
       </NavLink>
-      {/* Add Bookmarks NavLink */}
       <NavLink
         className={styles.NavLink}
         activeClassName={styles.Active}
