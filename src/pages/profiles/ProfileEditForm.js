@@ -109,7 +109,7 @@ function ProfileEditForm() {
       setCurrentUser(null);
       
       // Clear auth data including cookies
-      clearAuthData();
+      clearAuthData(true);
       
       // Force page reload after short delay
       setTimeout(() => {

@@ -42,7 +42,7 @@ const SignUpForm = () => {
     setIsSubmitting(true);
     try {
       await axios.post("/dj-rest-auth/registration/", signUpData);
-      clearAuthData();
+      clearAuthData(true);
       
       // Force page reload before redirect
       setTimeout(() => {
