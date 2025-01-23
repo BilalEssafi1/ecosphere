@@ -4,7 +4,6 @@ import styles from "../../styles/SignInUpForm.module.css";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
 import logoEcosphere from "../../assets/sign-up.jpg";
-
 import {
   Form,
   Button,
@@ -46,9 +45,8 @@ const SignUpForm = () => {
     password2: "",
   });
   const { username, password1, password2 } = signUpData;
-
   const [errors, setErrors] = useState({});
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const history = useHistory();
 
   const handleChange = (event) => {
@@ -60,22 +58,35 @@ const SignUpForm = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     try {
-      await axios.post("/dj-rest-auth/registration/", signUpData);
-      
-      // First clear tokens if any exist
+      // First clear any existing tokens and cookies
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-
-      // Clear all authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
+      
+      const cookiesToClear = [
+        'csrftoken', 
+        'sessionid', 
+        'messages', 
+        'my-app-auth', 
+        'my-refresh-token'
+      ];
+      cookiesToClear.forEach(cookieName => {
         removeCookie(cookieName);
       });
 
-      // Force a page reload before redirecting
-      window.location.href = '/signin';
+      await axios.post("/dj-rest-auth/registration/", signUpData);
+      
+      // Add a small delay before redirect
+      setTimeout(() => {
+        history.push('/signin');
+      }, 500);
     } catch (err) {
-      setErrors(err.response?.data);
+      setErrors(err.response?.data || {});
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -140,8 +151,9 @@ const SignUpForm = () => {
             <Button
               className={`${btnStyles.Button} ${btnStyles.Wide} ${btnStyles.Bright}`}
               type="submit"
+              disabled={isSubmitting}
             >
-              Sign up
+              {isSubmitting ? "Signing up..." : "Sign up"}
             </Button>
             {errors.non_field_errors?.map((message, idx) => (
               <Alert key={idx} variant="warning" className="mt-3">

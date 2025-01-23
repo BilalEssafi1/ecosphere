@@ -125,21 +125,34 @@ function ProfileEditForm() {
     if (isDeleting) return;
     setIsDeleting(true);
     try {
+      // Delete profile first
       await axiosReq.delete(`/profiles/${id}/`);
-      // Clear all user data and authentication
+      
+      // Clear user context
       setCurrentUser(null);
       
-      // First clear tokens
+      // Clear tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
 
-      // Clear all authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
+      // Clear all cookies
+      const cookiesToClear = [
+        'csrftoken',
+        'sessionid',
+        'messages',
+        'my-app-auth',
+        'my-refresh-token'
+      ];
+
+      cookiesToClear.forEach(cookieName => {
         removeCookie(cookieName);
       });
 
-      // Force a page reload before redirecting
-      window.location.href = '/signin';
+      // Add a small delay before redirect
+      setTimeout(() => {
+        window.location.href = '/signin';
+      }, 500);
+
     } catch (err) {
       setErrors({ delete: ["Failed to delete account. Please try again."] });
       setIsDeleting(false);
@@ -249,8 +262,8 @@ function ProfileEditForm() {
           >
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={handleDelete}
             disabled={isDeleting}
           >
