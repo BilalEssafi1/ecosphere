@@ -106,7 +106,7 @@ function ProfileEditForm() {
     try {
       await axiosReq.delete(`/profiles/${id}/`);
       setCurrentUser(null);
-      history.push("/signin");
+      window.location.href = '/signin';
     } catch (err) {
       setErrors({ delete: ["Failed to delete account. Please try again."] });
       setIsDeleting(false);
