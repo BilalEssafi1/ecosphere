@@ -15,27 +15,7 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 import { useRedirect } from "../../hooks/useRedirect";
-
-// Function to remove cookies with specific Heroku domain
-const removeCookie = (name) => {
-  // Target the specific herokuapp.com domain and its subdomain
-  const cookieOptions = [
-    // Root domain with specific path
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
-    // Handle the .herokuapp.com domain
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-    // Without domain specification
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
-    // With secure and SameSite attributes
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
-  ];
-
-  // Apply all cookie deletion variants
-  cookieOptions.forEach(option => {
-    document.cookie = option;
-  });
-};
+import { clearAuthData } from "../../utils/auth";
 
 const SignUpForm = () => {
   useRedirect("loggedIn");
@@ -59,32 +39,18 @@ const SignUpForm = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (isSubmitting) return;
-    
     setIsSubmitting(true);
     try {
-      // First clear any existing tokens and cookies
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      
-      const cookiesToClear = [
-        'csrftoken', 
-        'sessionid', 
-        'messages', 
-        'my-app-auth', 
-        'my-refresh-token'
-      ];
-      cookiesToClear.forEach(cookieName => {
-        removeCookie(cookieName);
-      });
-
       await axios.post("/dj-rest-auth/registration/", signUpData);
+      clearAuthData();
       
-      // Add a small delay before redirect
+      // Force page reload before redirect
       setTimeout(() => {
+        window.location.reload();
         history.push('/signin');
-      }, 500);
+      }, 100);
     } catch (err) {
-      setErrors(err.response?.data || {});
+      setErrors(err.response?.data);
     } finally {
       setIsSubmitting(false);
     }

@@ -107,7 +107,14 @@ function ProfileEditForm() {
     try {
       await axiosReq.delete(`/profiles/${id}/`);
       setCurrentUser(null);
+      
+      // Clear auth data including cookies
       clearAuthData();
+      
+      // Force page reload after short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     } catch (err) {
       setErrors({ delete: ["Failed to delete account. Please try again."] });
       setIsDeleting(false);
