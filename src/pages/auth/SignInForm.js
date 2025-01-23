@@ -51,11 +51,11 @@ function SignInForm() {
     
     // Clear existing auth data before attempting login
     clearAuthData(false);
+
+    // Wait for cookies to clear
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     try {
-      // Wait briefly for cookies to clear
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         headers: {
           "Content-Type": "application/json",
@@ -133,6 +133,7 @@ function SignInForm() {
               className={`${btnStyles.Button} ${btnStyles.Wide} ${btnStyles.Bright}`}
               type="submit"
               disabled={isSubmitting}
+              onClick={() => clearAuthData(false)}
             >
               {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
