@@ -2,27 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 import axios from "axios";
 import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
-
-// Function to remove cookies with specific Heroku domain
-const removeCookie = (name) => {
-  // Target the specific herokuapp.com domain and its subdomain
-  const cookieOptions = [
-    // Root domain with specific path
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
-    // Handle the .herokuapp.com domain
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-    // Without domain specification
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
-    // With secure and SameSite attributes
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com; secure; samesite=none`,
-    `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com; secure; samesite=none`
-  ];
-
-  // Apply all cookie deletion variants
-  cookieOptions.forEach(option => {
-    document.cookie = option;
-  });
-};
+import { clearAuthData } from "../utils/auth";
 
 /**
  * Context for storing and accessing the current user data
@@ -44,12 +24,7 @@ export const CurrentUserProvider = ({ children }) => {
    */
   const handleCleanup = useCallback(() => {
     setCurrentUser(null);
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    ['csrftoken', 'sessionid'].forEach(cookieName => {
-      removeCookie(cookieName);
-    });
-    window.location.href = '/signin';
+    clearAuthData(false);
   }, []);
 
   /**
@@ -80,25 +55,10 @@ export const CurrentUserProvider = ({ children }) => {
       // Clear user state and tokens
       setCurrentUser(null);
       removeTokenTimestamp();
-      
-      // Clear stored tokens
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-
-      // Clear specific authentication cookies
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
-        removeCookie(cookieName);
-      });
-
-      // Redirect to signin page
-      window.location.href = '/signin';
-      
+      clearAuthData();
     } catch (err) {
       console.error('Logout failed:', err);
-      // Attempt to clear cookies even if the logout request fails
-      ['csrftoken', 'sessionid'].forEach(cookieName => {
-        removeCookie(cookieName);
-      });
+      clearAuthData();
     }
   }, []);
 
@@ -136,6 +96,7 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("access_token");
       if (!token) {
+        handleCleanup();
         return;
       }
 
@@ -148,7 +109,7 @@ export const CurrentUserProvider = ({ children }) => {
         await refreshToken();
       }
     }
-  }, [refreshToken]);
+  }, [refreshToken, handleCleanup]);
 
   // Call handleMount on component mount
   useEffect(() => {
