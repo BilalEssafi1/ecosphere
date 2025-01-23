@@ -36,14 +36,26 @@ function SignInForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    clearAuthData(false); // Clear auth data without redirect
+    // Clear auth data when component mounts
+    clearAuthData(false);
   }, []);
 
+  /**
+   * Handles form submission for signing in
+   * Clears existing auth data, validates input, and processes login
+   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
+    
+    // Clear existing auth data before attempting login
+    clearAuthData(false);
+    
     try {
+      // Wait briefly for cookies to clear
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
         headers: {
           "Content-Type": "application/json",
