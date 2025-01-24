@@ -26,14 +26,28 @@ export const CurrentUserProvider = ({ children }) => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     
-    // Clear all cookies
+    // Clear all cookies with multiple domain variants
     const cookies = document.cookie.split(";");
     for (let i = 0; i < cookies.length; i++) {
       const cookie = cookies[i];
       const eqPos = cookie.indexOf("=");
-      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+      
+      const cookieOptions = [
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`,
+      ];
+
+      cookieOptions.forEach(option => {
+        document.cookie = option;
+      });
     }
+
+    // Force redirect to signin
+    window.location.href = '/signin';
   }, []);
 
   /**
@@ -67,17 +81,25 @@ export const CurrentUserProvider = ({ children }) => {
   const handleMount = useCallback(async () => {
     try {
       const token = localStorage.getItem("access_token");
+      const refreshToken = localStorage.getItem("refresh_token");
       const hasAuthCookie = document.cookie.includes('my-app-auth');
-      if (!token || !hasAuthCookie) {
-        setCurrentUser(null);
+
+      // If no valid tokens or cookies, force cleanup
+      if (!token || !refreshToken || !hasAuthCookie) {
+        handleCleanup();
         return;
       }
-      const { data } = await axios.get("/dj-rest-auth/user/");
+
+      // Attempt to validate the current user
+      const { data } = await axios.get("/dj-rest-auth/user/", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setCurrentUser(data);
     } catch (err) {
-      setCurrentUser(null);
+      // Any error during user validation triggers cleanup
+      handleCleanup();
     }
-  }, []);
+  }, [handleCleanup]);
 
   // Call handleMount on component mount
   useEffect(() => {
