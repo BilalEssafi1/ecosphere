@@ -25,6 +25,15 @@ export const CurrentUserProvider = ({ children }) => {
     setCurrentUser(null);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    
+    // Clear all cookies
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i];
+      const eqPos = cookie.indexOf("=");
+      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+    }
   }, []);
 
   /**
@@ -35,19 +44,17 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const refresh = localStorage.getItem("refresh_token");
       if (!refresh) {
-       // Clean logout if no refresh token
+        // Clean logout if no refresh token
         handleCleanup();
         return null;
       }
-
       const { data } = await axios.post("/dj-rest-auth/token/refresh/", {
         refresh: refresh
       });
-      
       localStorage.setItem("access_token", data.access);
       return data.access;
     } catch (err) {
-     // If refresh fails, do a clean logout
+      // If refresh fails, do a clean logout
       console.error('Token refresh failed:', err);
       handleCleanup();
       return null;
@@ -61,12 +68,10 @@ export const CurrentUserProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("access_token");
       const hasAuthCookie = document.cookie.includes('my-app-auth');
-      
       if (!token || !hasAuthCookie) {
         setCurrentUser(null);
         return;
       }
-
       const { data } = await axios.get("/dj-rest-auth/user/");
       setCurrentUser(data);
     } catch (err) {
@@ -85,12 +90,10 @@ export const CurrentUserProvider = ({ children }) => {
     axiosReq.interceptors.request.use(
       async (config) => {
         let token = localStorage.getItem("access_token");
-
-       // Check if token needs to be refreshed
+        // Check if token needs to be refreshed
         if (shouldRefreshToken()) {
           token = await refreshToken();
         }
-
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -116,7 +119,7 @@ export const CurrentUserProvider = ({ children }) => {
               handleCleanup();
             }
           } catch (refreshErr) {
-           // Ensure clean logout on any refresh error
+            // Ensure clean logout on any refresh error
             console.error('Token refresh error:', refreshErr);
             handleCleanup();
           }

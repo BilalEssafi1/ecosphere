@@ -10,8 +10,8 @@ import Alert from "react-bootstrap/Alert";
 import Modal from "react-bootstrap/Modal";
 import { axiosReq } from "../../api/axiosDefaults";
 import {
-  useCurrentUser,
-  useSetCurrentUser,
+useCurrentUser,
+useSetCurrentUser,
 } from "../../contexts/CurrentUserContext";
 import btnStyles from "../../styles/Button.module.css";
 import appStyles from "../../App.module.css";
@@ -78,11 +78,9 @@ function ProfileEditForm() {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("content", content);
-
     if (imageFile?.current?.files[0]) {
       formData.append("image", imageFile?.current?.files[0]);
     }
-
     try {
       const { data } = await axiosReq.put(`/profiles/${id}/`, formData);
       setCurrentUser((currentUser) => ({
@@ -105,7 +103,20 @@ function ProfileEditForm() {
     setIsDeleting(true);
     try {
       await axiosReq.delete(`/profiles/${id}/`);
+      // Clear all authentication-related data
       setCurrentUser(null);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      
+      // Clear all cookies
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+      }
+      
       history.push('/signin');
     } catch (err) {
       setErrors({ delete: ["Failed to delete account. Please try again."] });
@@ -125,7 +136,6 @@ function ProfileEditForm() {
           rows={7}
         />
       </Form.Group>
-
       {errors?.content?.map((message, idx) => (
         <Alert variant="warning" key={idx}>
           {message}
@@ -194,7 +204,6 @@ function ProfileEditForm() {
           <Container className={appStyles.Content}>{textFields}</Container>
         </Col>
       </Row>
-
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Delete Account</Modal.Title>
