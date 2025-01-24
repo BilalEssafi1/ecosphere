@@ -78,8 +78,10 @@ const BookmarkFolderModal = ({ show, handleClose, handleSelect }) => {
       setNewFolderName("");
       setError("");
     } catch (err) {
-      console.log(err.response);
-      if (err.response?.data?.detail) {
+      console.log('Error response:', err.response);
+      if (err.response?.status === 500) {
+        setError("A folder with this name already exists");
+      } else if (err.response?.data?.detail) {
         setError(err.response.data.detail);
       } else {
         setError("Something went wrong. Please try again.");
