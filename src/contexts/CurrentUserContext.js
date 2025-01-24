@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
+import { useHistory } from "react-router-dom";
 import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
 
@@ -17,6 +18,7 @@ export const useSetCurrentUser = () => useContext(SetCurrentUserContext);
  */
 export const CurrentUserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
+  const history = useHistory();
 
   /**
    * Handle clean logout and cleanup of auth data
@@ -46,9 +48,9 @@ export const CurrentUserProvider = ({ children }) => {
       });
     }
 
-    // Force redirect to signin
-    window.location.href = '/signin';
-  }, []);
+    // Redirect using React Router instead of window.location
+    history.push('/signin');
+  }, [history]);
 
   /**
    * Refresh access token using refresh token
@@ -84,9 +86,9 @@ export const CurrentUserProvider = ({ children }) => {
       const refreshToken = localStorage.getItem("refresh_token");
       const hasAuthCookie = document.cookie.includes('my-app-auth');
 
-      // If no valid tokens or cookies, force cleanup
+      // If no valid tokens or cookies, clear user state
       if (!token || !refreshToken || !hasAuthCookie) {
-        handleCleanup();
+        setCurrentUser(null);
         return;
       }
 
@@ -96,10 +98,10 @@ export const CurrentUserProvider = ({ children }) => {
       });
       setCurrentUser(data);
     } catch (err) {
-      // Any error during user validation triggers cleanup
-      handleCleanup();
+      // Clear user state on validation failure
+      setCurrentUser(null);
     }
-  }, [handleCleanup]);
+  }, []);
 
   // Call handleMount on component mount
   useEffect(() => {
