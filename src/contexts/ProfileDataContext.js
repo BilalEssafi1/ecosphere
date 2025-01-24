@@ -68,22 +68,13 @@ export const ProfileDataProvider = ({ children }) => {
   useEffect(() => {
     const handleMount = async () => {
       try {
-        // Only fetch profiles if there's a logged-in user
-        if (currentUser) {
-          const { data } = await axiosReq.get(
-            "/profiles/?ordering=-followers_count"
-          );
-          setProfileData((prevState) => ({
-            ...prevState,
-            popularProfiles: data,
-          }));
-        } else {
-          // Reset profile data when no user is logged in
-          setProfileData({
-            pageProfile: { results: [] },
-            popularProfiles: { results: [] },
-          });
-        }
+        const { data } = await axiosReq.get(
+          "/profiles/?ordering=-followers_count"
+        );
+        setProfileData((prevState) => ({
+          ...prevState,
+          popularProfiles: data,
+        }));
       } catch (err) {
         // Error handled silently to maintain user experience
       }
