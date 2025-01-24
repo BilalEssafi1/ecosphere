@@ -25,7 +25,6 @@ const SignUpForm = () => {
   });
   const { username, password1, password2 } = signUpData;
   const [errors, setErrors] = useState({});
-  const history = useHistory();
 
   const handleChange = (event) => {
     setSignUpData({
@@ -37,8 +36,8 @@ const SignUpForm = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      await axios.post("/dj-rest-auth/registration/", signUpData);
-      history.push("/signin");
+      const { data } = await axios.post("/dj-rest-auth/registration/", signUpData);
+      window.location.href = data.redirect || '/signin';
     } catch (err) {
       setErrors(err.response?.data);
     }
