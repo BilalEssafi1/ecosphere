@@ -25,7 +25,6 @@ export const CurrentUserProvider = ({ children }) => {
     setCurrentUser(null);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    window.location.href = '/signin';
   }, []);
 
   /**
@@ -64,14 +63,14 @@ export const CurrentUserProvider = ({ children }) => {
       const hasAuthCookie = document.cookie.includes('my-app-auth');
       
       if (!token || !hasAuthCookie) {
-        window.location.href = '/signin';
+        setCurrentUser(null);
         return;
       }
 
       const { data } = await axios.get("/dj-rest-auth/user/");
       setCurrentUser(data);
     } catch (err) {
-      window.location.href = '/signin';
+      setCurrentUser(null);
     }
   }, []);
 
@@ -114,7 +113,6 @@ export const CurrentUserProvider = ({ children }) => {
               config.headers.Authorization = `Bearer ${token}`;
               return axios(config);
             } else {
-             // If refresh failed, ensure clean logout
               handleCleanup();
             }
           } catch (refreshErr) {
