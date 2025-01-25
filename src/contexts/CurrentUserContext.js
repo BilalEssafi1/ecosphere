@@ -27,30 +27,16 @@ export const CurrentUserProvider = ({ children }) => {
     setCurrentUser(null);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    
-    // Clear all cookies with multiple domain variants
+
+    // Clear all cookies as a fallback for complete cleanup
     const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i];
-      const eqPos = cookie.indexOf("=");
-      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-      
-      const cookieOptions = [
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`,
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`,
-      ];
+    cookies.forEach((cookie) => {
+      const name = cookie.split("=")[0].trim();
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+    });
 
-      cookieOptions.forEach(option => {
-        document.cookie = option;
-      });
-    }
-
-    // Redirect using React Router instead of window.location
-    history.push('/signin');
-  }, [history]);
+    // Keep the user on the homepage instead of redirecting to the sign-in page
+  }, []);
 
   /**
    * Refresh access token using refresh token
@@ -65,56 +51,61 @@ export const CurrentUserProvider = ({ children }) => {
         return null;
       }
       const { data } = await axios.post("/dj-rest-auth/token/refresh/", {
-        refresh: refresh
+        refresh: refresh,
       });
       localStorage.setItem("access_token", data.access);
       return data.access;
     } catch (err) {
-      // If refresh fails, do a clean logout
-      console.error('Token refresh failed:', err);
+      // If token refresh fails, clean up the session
+      console.error("Token refresh failed:", err);
       handleCleanup();
       return null;
     }
   }, [handleCleanup]);
 
   /**
-   * Fetch current user data using stored token
+   * Fetch current user data using the stored token
+   * Handles session validation on app mount
    */
   const handleMount = useCallback(async () => {
     try {
-      const token = localStorage.getItem("access_token");
+      const accessToken = localStorage.getItem("access_token");
       const refreshToken = localStorage.getItem("refresh_token");
-      const hasAuthCookie = document.cookie.includes('my-app-auth');
+      const hasAuthCookie = document.cookie.includes("my-app-auth");
 
-      // If no valid tokens or cookies, clear user state
-      if (!token || !refreshToken || !hasAuthCookie) {
-        setCurrentUser(null);
-        return;
+      // If no valid tokens or cookies, attempt a silent refresh before cleanup
+      if (!accessToken || !refreshToken || !hasAuthCookie) {
+        const refreshedToken = await refreshToken();
+        if (!refreshedToken) {
+          handleCleanup();
+          return;
+        }
       }
 
-      // Attempt to validate the current user
+      // Attempt to validate and fetch the current user
       const { data } = await axios.get("/dj-rest-auth/user/", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
       });
-      setCurrentUser(data);
+      setCurrentUser(data); // Set the authenticated user
     } catch (err) {
-      // Clear user state on validation failure
-      setCurrentUser(null);
+      // Cleanup if validation fails
+      console.error("Error during user validation:", err);
+      handleCleanup();
     }
-  }, []);
+  }, [handleCleanup, refreshToken]);
 
-  // Call handleMount on component mount
+  // Call handleMount on component mount to validate the session
   useEffect(() => {
     handleMount();
   }, [handleMount]);
 
-  // Set up axios interceptors
+  // Set up axios interceptors for handling tokens
   useMemo(() => {
-    // Request interceptor: add token to all requests if available
+    // Request interceptor: add token to outgoing requests if available
     axiosReq.interceptors.request.use(
       async (config) => {
         let token = localStorage.getItem("access_token");
-        // Check if token needs to be refreshed
+        // Check if the token needs to be refreshed
         if (shouldRefreshToken()) {
           token = await refreshToken();
         }
@@ -134,24 +125,20 @@ export const CurrentUserProvider = ({ children }) => {
       async (err) => {
         if (err.response?.status === 401) {
           try {
-            const token = await refreshToken();
-            if (token) {
+            const refreshedToken = await refreshToken();
+            if (refreshedToken) {
               const config = err.config;
-              config.headers.Authorization = `Bearer ${token}`;
+              config.headers.Authorization = `Bearer ${refreshedToken}`;
               return axios(config);
-            } else {
-              handleCleanup();
             }
           } catch (refreshErr) {
-            // Ensure clean logout on any refresh error
-            console.error('Token refresh error:', refreshErr);
-            handleCleanup();
+            console.error("Token refresh error:", refreshErr);
           }
         }
         return Promise.reject(err);
       }
     );
-  }, [refreshToken, handleCleanup]);
+  }, [refreshToken]);
 
   return (
     <CurrentUserContext.Provider value={currentUser}>
