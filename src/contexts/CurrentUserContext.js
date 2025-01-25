@@ -3,6 +3,7 @@ import axios from "axios";
 import { useHistory } from "react-router-dom";
 import { axiosReq, axiosRes } from "../api/axiosDefaults";
 import { removeTokenTimestamp, shouldRefreshToken } from "../utils/utils";
+import Cookies from 'js-cookie';
 
 /**
  * Context for storing and accessing the current user data
@@ -21,12 +22,15 @@ export const CurrentUserProvider = ({ children }) => {
   const history = useHistory();
 
   /**
-   * Handle clean logout and cleanup of auth data
+   * Enhanced cleanup function to handle all auth state
+   * Cleans up tokens, cookies, and user state across domains
+   * Handles both local development and production environments
    */
   const handleCleanup = useCallback(() => {
     setCurrentUser(null);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    removeTokenTimestamp();
     
     // Clear all cookies with multiple domain variants
     const cookies = document.cookie.split(";");
@@ -35,11 +39,15 @@ export const CurrentUserProvider = ({ children }) => {
       const eqPos = cookie.indexOf("=");
       const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
       
+      // Handle different domain scenarios and security attributes
       const cookieOptions = [
+        // Base path clearing
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`,
+        // Current domain
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`,
+        // Heroku domain
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=drf-api-green-social-61be33473742.herokuapp.com`,
+        // Secure cookie clearing
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`,
       ];
 
@@ -48,13 +56,13 @@ export const CurrentUserProvider = ({ children }) => {
       });
     }
 
-    // Redirect using React Router instead of window.location
     history.push('/signin');
   }, [history]);
 
   /**
-   * Refresh access token using refresh token
-   * Handles token expiration with proper cleanup
+   * Enhanced token refresh with improved error handling
+   * Includes CSRF token in refresh request
+   * Handles token refresh failures gracefully
    */
   const refreshToken = useCallback(async () => {
     try {
@@ -64,13 +72,20 @@ export const CurrentUserProvider = ({ children }) => {
         handleCleanup();
         return null;
       }
+      
       const { data } = await axios.post("/dj-rest-auth/token/refresh/", {
         refresh: refresh
+      }, {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': Cookies.get('csrftoken'),
+          'Content-Type': 'application/json'
+        }
       });
+      
       localStorage.setItem("access_token", data.access);
       return data.access;
     } catch (err) {
-      // If refresh fails, do a clean logout
       console.error('Token refresh failed:', err);
       handleCleanup();
       return null;
@@ -79,6 +94,7 @@ export const CurrentUserProvider = ({ children }) => {
 
   /**
    * Fetch current user data using stored token
+   * Handles token validation and auth state
    */
   const handleMount = useCallback(async () => {
     try {
@@ -86,19 +102,18 @@ export const CurrentUserProvider = ({ children }) => {
       const refreshToken = localStorage.getItem("refresh_token");
       const hasAuthCookie = document.cookie.includes('my-app-auth');
 
-      // If no valid tokens or cookies, clear user state
+      // Clear state if no valid tokens or cookies exist
       if (!token || !refreshToken || !hasAuthCookie) {
         setCurrentUser(null);
         return;
       }
 
-      // Attempt to validate the current user
+      // Validate current user with token
       const { data } = await axios.get("/dj-rest-auth/user/", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentUser(data);
     } catch (err) {
-      // Clear user state on validation failure
       setCurrentUser(null);
     }
   }, []);
@@ -108,7 +123,7 @@ export const CurrentUserProvider = ({ children }) => {
     handleMount();
   }, [handleMount]);
 
-  // Set up axios interceptors
+  // Set up axios interceptors for request/response handling
   useMemo(() => {
     // Request interceptor: add token to all requests if available
     axiosReq.interceptors.request.use(
