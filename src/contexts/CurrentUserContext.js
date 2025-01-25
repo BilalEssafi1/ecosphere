@@ -86,9 +86,9 @@ export const CurrentUserProvider = ({ children }) => {
       const refreshToken = localStorage.getItem("refresh_token");
       const hasAuthCookie = document.cookie.includes('my-app-auth');
 
-      // If no valid tokens or cookies, clear user state
+      // If no valid tokens or cookies, force cleanup
       if (!token || !refreshToken || !hasAuthCookie) {
-        setCurrentUser(null);
+        handleCleanup();
         return;
       }
 
@@ -98,10 +98,10 @@ export const CurrentUserProvider = ({ children }) => {
       });
       setCurrentUser(data);
     } catch (err) {
-      // Clear user state on validation failure
-      setCurrentUser(null);
+      // Any error during user validation triggers cleanup
+      handleCleanup();
     }
-  }, []);
+  }, [handleCleanup]);
 
   // Call handleMount on component mount
   useEffect(() => {
