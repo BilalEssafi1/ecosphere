@@ -41,9 +41,8 @@ const [errors, setErrors] = useState({});
 useEffect(() => {
   // Clear old CSRF token and fetch new one
   Cookies.remove('csrftoken');
-  axios.get('/dj-rest-auth/user/', { withCredentials: true })
-    .catch(() => {
-    });
+  axios.get('/dj-rest-auth/csrf/', { withCredentials: true })
+    .catch(() => {});
 }, []);
 
 /**
@@ -53,6 +52,9 @@ useEffect(() => {
 const handleSubmit = async (event) => {
   event.preventDefault();
   try {
+    // Ensure CSRF token is fetched and available
+    await axios.get('/dj-rest-auth/csrf/', { withCredentials: true });
+
     // Make login request with CSRF token
     const { data } = await axios.post("/dj-rest-auth/login/", signInData, {
       withCredentials: true,
@@ -74,7 +76,7 @@ const handleSubmit = async (event) => {
     setCurrentUser(data.user);
     setTokenTimestamp(data);
     history.push("/posts");
-   
+    
   } catch (err) {
     setErrors(err.response?.data || {
       non_field_errors: ["An error occurred. Please try again."],
@@ -95,13 +97,11 @@ const handleChange = (event) => {
 
 return (
   <Row className={styles.Row}>
-    {/* Form Column */}
     <Col className="my-auto p-0 p-md-2" md={6}>
       <Container className={`${appStyles.Content} p-4`}>
         <h1 className={styles.Header}>Sign In</h1>
-       
+        
         <Form onSubmit={handleSubmit}>
-          {/* Username Field */}
           <Form.Group controlId="username">
             <Form.Label className="d-none">Username</Form.Label>
             <Form.Control
@@ -113,14 +113,12 @@ return (
               onChange={handleChange}
             />
           </Form.Group>
-          {/* Username Errors */}
           {errors.username?.map((message, idx) => (
             <Alert key={idx} variant="warning">
               {message}
             </Alert>
           ))}
 
-          {/* Password Field */}
           <Form.Group controlId="password">
             <Form.Label className="d-none">Password</Form.Label>
             <Form.Control
@@ -132,14 +130,12 @@ return (
               onChange={handleChange}
             />
           </Form.Group>
-          {/* Password Errors */}
           {errors.password?.map((message, idx) => (
             <Alert key={idx} variant="warning">
               {message}
             </Alert>
           ))}
 
-          {/* Submit Button */}
           <Button
             className={`${btnStyles.Button} ${btnStyles.Wide} ${btnStyles.Bright}`}
             type="submit"
@@ -147,8 +143,6 @@ return (
             Sign In
           </Button>
 
-
-          {/* General Form Errors */}
           {errors.non_field_errors?.map((message, idx) => (
             <Alert key={idx} variant="warning" className="mt-3">
               {message}
@@ -157,8 +151,6 @@ return (
         </Form>
       </Container>
 
-
-      {/* Sign Up Link */}
       <Container className={`mt-3 ${appStyles.Content}`}>
         <Link className={styles.Link} to="/signup">
           Don't have an account? <span>Sign up now!</span>
@@ -166,8 +158,6 @@ return (
       </Container>
     </Col>
 
-
-    {/* Image Column */}
     <Col
       md={6}
       className={`my-auto d-none d-md-block p-2 ${styles.SignInCol}`}
