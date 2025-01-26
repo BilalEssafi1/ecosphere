@@ -4,22 +4,22 @@ import { useHistory } from "react-router";
 
 /**
 * Custom hook to handle authentication-based redirects
-* Manages token refresh and user authentication status
+* Manages token refresh and user authentication status in different scenarios
 */
 export const useRedirect = (userAuthStatus) => {
  const history = useHistory();
 
  useEffect(() => {
    /**
-    * Handles component mount logic
-    * Checks authentication status and manages token refresh
+    * Primary handler for authentication flow and token management
+    * Performs token refresh, cleanup, and appropriate redirects
     */
    const handleMount = async () => {
      try {
-       // Check for existing refresh token
+       // Retrieve existing refresh token from local storage
        const refreshToken = localStorage.getItem('refresh_token');
        
-       // Handle case when no refresh token exists
+       // If no refresh token exists and user should be logged out, redirect
        if (!refreshToken) {
          if (userAuthStatus === "loggedOut") {
            history.push("/");
@@ -27,42 +27,55 @@ export const useRedirect = (userAuthStatus) => {
          return;
        }
 
-       // Attempt to refresh the access token
-       const response = await axios.post("/dj-rest-auth/token/refresh/", {
-         refresh: refreshToken
-       }, {
-         headers: {
-           'Content-Type': 'application/json'
+       try {
+         // Attempt to refresh access token using refresh token
+         const response = await axios.post("/dj-rest-auth/token/refresh/", 
+           { refresh: refreshToken },
+           { 
+             withCredentials: true,
+             headers: {
+               'Content-Type': 'application/json'
+             }
+           }
+         );
+
+         // Store new access token if refresh is successful
+         if (response.data?.access) {
+           localStorage.setItem('access_token', response.data.access);
          }
-       });
 
-       // Store new access token if refresh was successful
-       if (response.data?.access) {
-         localStorage.setItem('access_token', response.data.access);
-       }
-
-       // Handle redirect for logged in users
-       if (userAuthStatus === "loggedIn") {
-         history.push("/");
-       }
-     } catch (err) {
-       
-       // Clear tokens if refresh failed
-       if (err.response?.status === 401) {
+         // Redirect authenticated users if configured
+         if (userAuthStatus === "loggedIn") {
+           history.push("/");
+         }
+       } catch (refreshError) {
+         // Comprehensive cleanup on token refresh failure
+         
+         // Remove stored tokens
          localStorage.removeItem('access_token');
          localStorage.removeItem('refresh_token');
-       }
+         
+         // Clear all browser cookies for current domain
+         document.cookie.split(";").forEach((c) => {
+           document.cookie = c
+             .replace(/^ +/, "")
+             .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/;domain=${window.location.hostname}`);
+         });
 
-       // Redirect logged out users
-       if (userAuthStatus === "loggedOut") {
-         history.push("/");
+         // Redirect based on authentication status
+         if (userAuthStatus === "loggedOut") {
+           history.push("/");
+         }
        }
+     } catch (err) {
+       // Log any unexpected errors during redirect process
+       console.error("Redirect error:", err);
      }
    };
 
-   // Execute mount handler
+   // Execute authentication and redirect logic
    handleMount();
- }, [history, userAuthStatus]); // Re-run effect if history or userAuthStatus changes
+ }, [history, userAuthStatus]);
 };
 
 export default useRedirect;
