@@ -128,17 +128,27 @@ export const CurrentUserProvider = ({ children }) => {
     // Request interceptor: add token to all requests if available
     axiosReq.interceptors.request.use(
       async (config) => {
-        let token = localStorage.getItem("access_token");
+        try {
+          let token = localStorage.getItem("access_token");
         // Check if token needs to be refreshed
-        if (shouldRefreshToken()) {
-          token = await refreshToken();
+          if (shouldRefreshToken()) {
+            token = await refreshToken();
+          }
+          
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+            return config;
+          } else {
+            handleCleanup();
+            return Promise.reject('No valid token');
+          }
+        } catch (err) {
+          handleCleanup();
+          return Promise.reject(err);
         }
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
       },
       (err) => {
+        handleCleanup();
         return Promise.reject(err);
       }
     );
@@ -147,21 +157,9 @@ export const CurrentUserProvider = ({ children }) => {
     axiosRes.interceptors.response.use(
       (response) => response,
       async (err) => {
-        if (err.response?.status === 401) {
-          try {
-            const token = await refreshToken();
-            if (token) {
-              const config = err.config;
-              config.headers.Authorization = `Bearer ${token}`;
-              return axios(config);
-            } else {
-              handleCleanup();
-            }
-          } catch (refreshErr) {
-            // Ensure clean logout on any refresh error
-            console.error('Token refresh error:', refreshErr);
-            handleCleanup();
-          }
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          handleCleanup();
+          return Promise.reject(err);
         }
         return Promise.reject(err);
       }
