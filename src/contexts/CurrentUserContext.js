@@ -47,6 +47,7 @@ export const CurrentUserProvider = ({ children }) => {
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`,
         // Heroku domain
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
+        // Secure cookie clearing
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`,
       ];
 
@@ -127,34 +128,17 @@ export const CurrentUserProvider = ({ children }) => {
     // Request interceptor: add token to all requests if available
     axiosReq.interceptors.request.use(
       async (config) => {
-        try {
-          let token = localStorage.getItem("access_token");
-          
-          // Check for session validity
-          const hasAuthCookie = document.cookie.includes('my-app-auth');
-          if (!hasAuthCookie) {
-            handleCleanup();
-            return Promise.reject('Session expired');
-          }
-
-          if (shouldRefreshToken()) {
-            token = await refreshToken();
-          }
-          
-          if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-            return config;
-          } else {
-            handleCleanup();
-            return Promise.reject('No valid token');
-          }
-        } catch (err) {
-          handleCleanup();
-          return Promise.reject(err);
+        let token = localStorage.getItem("access_token");
+        // Check if token needs to be refreshed
+        if (shouldRefreshToken()) {
+          token = await refreshToken();
         }
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
       },
       (err) => {
-        handleCleanup();
         return Promise.reject(err);
       }
     );
@@ -163,9 +147,20 @@ export const CurrentUserProvider = ({ children }) => {
     axiosRes.interceptors.response.use(
       (response) => response,
       async (err) => {
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          handleCleanup();
-          return Promise.reject(err);
+        if (err.response?.status === 401) {
+          try {
+            const token = await refreshToken();
+            if (token) {
+              const config = err.config;
+              config.headers.Authorization = `Bearer ${token}`;
+              return axios(config);
+            } else {
+              handleCleanup();
+            }
+          } catch (refreshErr) {
+            console.error('Token refresh error:', refreshErr);
+            handleCleanup();
+          }
         }
         return Promise.reject(err);
       }
