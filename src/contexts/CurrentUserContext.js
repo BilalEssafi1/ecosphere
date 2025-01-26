@@ -47,8 +47,7 @@ export const CurrentUserProvider = ({ children }) => {
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`,
         // Heroku domain
         `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.herokuapp.com`,
-        // Secure cookie clearing
-        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=none`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=lax`,
       ];
 
       cookieOptions.forEach(option => {
@@ -130,7 +129,14 @@ export const CurrentUserProvider = ({ children }) => {
       async (config) => {
         try {
           let token = localStorage.getItem("access_token");
-        // Check if token needs to be refreshed
+          
+          // Check for session validity
+          const hasAuthCookie = document.cookie.includes('my-app-auth');
+          if (!hasAuthCookie) {
+            handleCleanup();
+            return Promise.reject('Session expired');
+          }
+
           if (shouldRefreshToken()) {
             token = await refreshToken();
           }
