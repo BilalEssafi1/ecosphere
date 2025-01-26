@@ -10,10 +10,16 @@ export const useRedirect = (userAuthStatus) => {
   const history = useHistory();
 
   useEffect(() => {
-   /**
-    * Primary handler for authentication flow and token management
-    * Performs token refresh, cleanup, and appropriate redirects
-    */
+    const clearAllCookies = () => {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}; SameSite=None; Secure`;
+      }
+    };
+
     const handleMount = async () => {
       try {
        // Retrieve existing refresh token from local storage
@@ -21,6 +27,8 @@ export const useRedirect = (userAuthStatus) => {
         
        // If no refresh token exists and user should be logged out, redirect
         if (!refreshToken) {
+          clearAllCookies();
+          localStorage.clear();
           if (userAuthStatus === "loggedOut") {
             history.push("/");
           }
@@ -39,49 +47,15 @@ export const useRedirect = (userAuthStatus) => {
             }
           );
 
-         // Store new access token if refresh is successful
-          if (response.data?.access) {
-            localStorage.setItem('access_token', response.data.access);
-          }
-
-          if (userAuthStatus === "loggedIn") {
-            history.push("/");
+          if (!response.data?.access) {
+            clearAllCookies();
+            localStorage.clear();
+            history.push("/signin");
           }
         } catch (refreshError) {
-          // Comprehensive cleanup for stale authentication
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          
-          // Aggressive cookie clearing across domains
-          const domains = [
-            window.location.hostname,
-            '.herokuapp.com',
-            document.domain
-          ];
-
-          domains.forEach(domain => {
-            document.cookie.split(";").forEach((c) => {
-              document.cookie = c
-                .replace(/^ +/, "")
-                .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/;domain=${domain}`);
-            });
-          });
-
-          // Additional cleanup for authentication-specific cookies
-          const authCookies = [
-            'csrftoken', 
-            'sessionid', 
-            'my-app-auth', 
-            'my-refresh-token'
-          ];
-
-          authCookies.forEach(cookieName => {
-            document.cookie = `${cookieName}=;expires=${new Date().toUTCString()};path=/`;
-          });
-
-          if (userAuthStatus === "loggedOut") {
-            history.push("/");
-          }
+          clearAllCookies();
+          localStorage.clear();
+          history.push("/signin");
         }
       } catch (err) {
        // Log any unexpected errors during redirect process
