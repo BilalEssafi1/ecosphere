@@ -29,42 +29,34 @@ axiosRes.interceptors.response.use(
   async (err) => {
     const originalRequest = err.config;
     
-    // If the error is 401 and we haven't already tried to refresh
-    if (err.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
+    if (err.response?.status === 401) {
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) {
-          // If no refresh token, clear everything and redirect to login
-          localStorage.removeItem('access_token');
-          window.location.href = '/signin';
-          return Promise.reject(err);
-        }
-
-        // Attempt to refresh the token
-        const response = await axios.post(
+        const refreshResponse = await axios.post(
           '/dj-rest-auth/token/refresh/',
-          { refresh: refreshToken },
-          { withCredentials: true }
+          { refresh: localStorage.getItem('refresh_token') },
+          { 
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          }
         );
 
-        if (response.data.access) {
-          // Store the new access token
-          localStorage.setItem('access_token', response.data.access);
-          
-          // Update the authorization header
-          originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
-          
-          // Retry the original request
+        if (refreshResponse.data.access) {
+          localStorage.setItem('access_token', refreshResponse.data.access);
+          originalRequest.headers['Authorization'] = `Bearer ${refreshResponse.data.access}`;
           return axios(originalRequest);
         }
       } catch (refreshError) {
-        // If refresh fails, clear everything and redirect to login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        localStorage.clear();
+        sessionStorage.clear();
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+        });
         window.location.href = '/signin';
-        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(err);
