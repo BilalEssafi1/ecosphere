@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState, useRef } from "react";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Row from "react-bootstrap/Row";
@@ -6,14 +6,15 @@ import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import Alert from "react-bootstrap/Alert";
 import Image from "react-bootstrap/Image";
-import Asset from "../../components/Asset";
-import Upload from "../../assets/upload.png";
-import styles from "../../styles/PostCreateEditForm.module.css";
-import appStyles from "../../App.module.css";
-import btnStyles from "../../styles/Button.module.css";
 import { useHistory } from "react-router";
 import { axiosReq } from "../../api/axiosDefaults";
+import Asset from "../../components/Asset";
 import { useRedirect } from "../../hooks/useRedirect";
+import imageCompression from 'browser-image-compression';
+import appStyles from "../../App.module.css";
+import btnStyles from "../../styles/Button.module.css";
+import styles from "../../styles/PostCreateEditForm.module.css";
+import Upload from "../../assets/upload.png";
 
 /**
  * Form component for creating new posts.
@@ -44,22 +45,39 @@ function PostCreateForm() {
    * Handle changes to text fields (e.g., title, content, hashtags).
    */
   const handleChange = (event) => {
+    const { name, value } = event.target;
     setPostData({
       ...postData,
-      [event.target.name]: event.target.value,
+      [name]: name === 'title'
+        ? (value.length > 50 ? value.slice(0, 50) : value)
+        : (name === 'content'
+          ? (value.length > 300 ? value.slice(0, 300) : value)
+          : value),
     });
   };
 
   /**
    * Handle changes to the image input and update the preview image.
    */
-  const handleChangeImage = (event) => {
+  const handleChangeImage = async (event) => {
     if (event.target.files.length) {
-      URL.revokeObjectURL(image);
-      setPostData({
-        ...postData,
-        image: URL.createObjectURL(event.target.files[0]),
-      });
+      const originalImage = event.target.files[0];
+      try {
+        const compressedImage = await imageCompression(originalImage, {
+          maxSizeMB: 1,          // Max file size
+          maxWidth: 800,         // Max width of image
+          maxHeight: 800,        // Max height of image
+          useWebWorker: true
+        });
+
+        URL.revokeObjectURL(image);
+        setPostData({
+          ...postData,
+          image: URL.createObjectURL(compressedImage),
+        });
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
@@ -82,10 +100,10 @@ function PostCreateForm() {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
+    formData.append("add_hashtags", add_hashtags);
     if (imageInput?.current?.files[0]) {
       formData.append("image", imageInput.current.files[0]);
     }
-    formData.append("add_hashtags", add_hashtags);
 
     try {
       // Submit the form data to the API
@@ -116,31 +134,39 @@ function PostCreateForm() {
           value={title}
           onChange={handleChange}
           required
+          maxLength={50}
         />
+        <small className="text-muted d-block text-right">
+          {`${title.length}/50 characters`}
+        </small>
+        {errors?.title?.map((message, idx) => (
+          <Alert variant="warning" key={idx}>
+            {message}
+          </Alert>
+        ))}
       </Form.Group>
-      {errors?.title?.map((message, idx) => (
-        <Alert variant="warning" key={idx}>
-          {message} {/* Display error messages for the title field */}
-        </Alert>
-      ))}
 
       {/* Content field */}
       <Form.Group>
         <Form.Label>Content</Form.Label>
         <Form.Control
           as="textarea"
-          rows={6}
           name="content"
           value={content}
           onChange={handleChange}
-          required // Make the content field mandatory
+          rows={7}
+          required
+          maxLength={300}
         />
+        <small className="text-muted d-block text-right">
+          {`${content.length}/300 characters`}
+        </small>
+        {errors?.content?.map((message, idx) => (
+          <Alert variant="warning" key={idx}>
+            {message}
+          </Alert>
+        ))}
       </Form.Group>
-      {errors?.content?.map((message, idx) => (
-        <Alert variant="warning" key={idx}>
-          {message} {/* Display error messages for the content field */}
-        </Alert>
-      ))}
 
       {/* Hashtags field */}
       <Form.Group>
@@ -169,7 +195,10 @@ function PostCreateForm() {
       >
         cancel
       </Button>
-      <Button className={`${btnStyles.Button} ${btnStyles.Blue}`} type="submit">
+      <Button
+        className={`${btnStyles.Button} ${btnStyles.Blue}`}
+        type="submit"
+      >
         create
       </Button>
     </div>
@@ -210,7 +239,6 @@ function PostCreateForm() {
                   />
                 </Form.Label>
               )}
-
               {/* Image upload input field */}
               <Form.File
                 id="image-upload"
