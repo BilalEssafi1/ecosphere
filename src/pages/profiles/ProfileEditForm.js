@@ -66,7 +66,7 @@ function ProfileEditForm() {
    const { name, value } = event.target;
    setProfileData({
      ...profileData,
-     [name]: name === 'content' && value.length > 150 ? value.slice(0, 150) : value,
+     [name]: name === 'content' && value.length > 250 ? value.slice(0, 250) : value,
    });
  };
 
