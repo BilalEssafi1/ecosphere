@@ -124,30 +124,35 @@ const BookmarkFolderModal = ({ show, handleClose, handleSelect }) => {
          </Button>
        </div>
 
-       {/* Display folders list */}
-       {hasLoaded ? (
-         folders.results.length ? (
-           folders.results.map((folder) => (
-             <div
-               key={folder.id}
-               className={styles.FolderItem}
-               onClick={() => handleSelect(folder.id)}
-               role="button"
-               aria-label={`Select folder ${folder.name}`}
-             >
-               <span>{folder.name}</span>
-               <span>{folder.bookmarks_count} saved</span>
-             </div>
-           ))
-         ) : (
-           <p>No folders yet. Create one to start saving posts!</p>
-         )
-       ) : (
-         <Asset spinner />
-       )}
-     </Modal.Body>
-   </Modal>
- );
+        {/* Display folders list */}
+        {hasLoaded ? (
+          folders.results.length ? (
+            <>
+              <p className="text-muted small mb-2">
+                Click on a folder to save the post
+              </p>
+              {folders.results.map((folder) => (
+                <div
+                  key={folder.id}
+                  className={styles.FolderItem}
+                  onClick={() => handleSelect(folder.id)}
+                  role="button"
+                  aria-label={`Select folder ${folder.name}`}
+                >
+                  <span>{folder.name}</span>
+                  <span>{folder.bookmarks_count} saved</span>
+                </div>
+              ))}
+            </>
+          ) : (
+            <p>No folders yet. Create one to start saving posts!</p>
+          )
+        ) : (
+          <Asset spinner />
+        )}
+      </Modal.Body>
+    </Modal>
+  );
 };
 
 export default BookmarkFolderModal;
