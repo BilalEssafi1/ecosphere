@@ -186,6 +186,11 @@ By prioritizing user needs and following an agile methodology, I aimed to delive
 ![Screenshot user management design](src/assets/profile-ecosphere.png)
 - Account Deletion: Option to delete account with confirmation prompts.
 ![Screenshot delete account](src/assets/account-deletion.png)
+- Change Username: Option to change the username
+![Screenshot update username](src/assets/update-username.png)
+- Change Password: Option to change the password
+![Screenshot update username](src/assets/update-password.png)
+
 
 ## Add and Edit Post
 - Add Post: Allows users to add a post including titile, content, image, and hashtags for better findability.
@@ -207,7 +212,9 @@ By prioritizing user needs and following an agile methodology, I aimed to delive
 
 ## Follow Users
 - Follow and unfollow users: Allows me to follow users I like and also unfollow them.
+
 ![Screenshot follow and unfollow users design](src/assets/follow-users-ecosphere.png)
+
 - Followed Users Feed: Posts from followed users are saved in the followed user feed for better findability.
 ![Screenshot follower feed design](src/assets/follower-feed-ecosphere.png)
 
